@@ -1,22 +1,18 @@
-package com.example.bixi
+package com.example.bixi.activities
 
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
+import com.example.bixi.R
 import com.example.bixi.databinding.ActivityMainBinding
-import com.example.bixi.models.api.LoginRequest
-import com.example.bixi.services.RetrofitClient
+import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.viewModels.LoginViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -55,5 +51,19 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Login eșuat!", Toast.LENGTH_SHORT).show()
             }
         }
+
+        setStyles()
+    }
+
+    fun setStyles(){
+        BackgroundStylerService.setRoundedBackground(
+            view = binding.flLogoFrame,
+            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
+            cornerRadius = 24f * resources.displayMetrics.density,
+//            withRipple = true,
+//            rippleColor = ContextCompat.getColor(this, R.color.ic_launcher_logo),
+            strokeWidth = (2 * resources.displayMetrics.density).toInt(), // 2dp în px
+            strokeColor = ContextCompat.getColor(this, R.color.md_theme_tertiaryContainer)
+        )
     }
 }
