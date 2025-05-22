@@ -7,15 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.RequestOptions
 import com.example.bixi.R
 import com.example.bixi.customViews.ValidatedTextInputLayout
 import com.example.bixi.databinding.ActivityLoginBinding
-import com.example.bixi.databinding.ActivityMainBinding
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.viewModels.LoginViewModel
 

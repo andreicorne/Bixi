@@ -1,4 +1,33 @@
 <resources>
     <string name="app_name">Bixi</string>
     <string name="username">Username</string>
+    <string name="timekeeper">Timekeeper</string>
+    <string name="tasks">Tasks</string>
+    <string name="logout">Logout</string>
+    <string name="settings">Settings</string>
+    <string name="logout_confirmation_title">Confirmation</string>
+    <string name="logout_confirmation_details">Are you sure you want to log out?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
+    <string name="new_text">New</string>
+    <string name="in_progress">In progress</string>
+    <string name="overdue">Overdue</string>
+
+    <string name="language">Language</string>
+    <string name="choose_language">Choose app language</string>
+    <string name="dark_mode">Dark mode</string>
+    <string name="turn_dark_mode">Enable or disable dark mode</string>
+    <string name="about_the_app">About the app</string>
+    <string name="app_version">App version</string>
+
+    <string-array name="language_entries">
+        <item>Romanian</item>
+        <item>English</item>
+    </string-array>
+
+    <string-array name="language_values">
+        <item>ro</item>
+        <item>en</item>
+    </string-array>
 </resources>

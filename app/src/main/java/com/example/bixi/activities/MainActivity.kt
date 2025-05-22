@@ -1,23 +1,36 @@
 package com.example.bixi.activities
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.RequestOptions
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.NavigationUI
+import androidx.navigation.ui.navigateUp
+import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.navigation.ui.setupWithNavController
 import com.example.bixi.R
 import com.example.bixi.databinding.ActivityMainBinding
-import com.example.bixi.helper.BackgroundStylerService
-import com.example.bixi.viewModels.LoginViewModel
+import com.example.bixi.helper.LocaleHelper
+import com.example.bixi.services.DialogService
+import com.example.bixi.services.SecureStorageService
+import com.google.android.material.navigation.NavigationView
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-//    private val loginViewModel: LoginViewModel by viewModels()
+    private lateinit var navController: NavController
+    private lateinit var appBarConfiguration: AppBarConfiguration
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,45 +38,79 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-//        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-//            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-//            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-//            insets
-//        }
 
-//        Glide.with(this)
-//            .load(R.drawable.ic_logo) // sau URL
-//            .apply(RequestOptions.bitmapTransform(RoundedCorners(32))) // 32 = raza colțurilor
-//            .into(binding.ivLogo)
-//
-//        binding.usernameLayout.setRegex(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"), "Eroareee")
-//
-//        binding.btnLogin.setOnClickListener{
-////            binding.usernameLayout.validate()
-//
-//            loginViewModel.login(binding.etUsername.text.toString(), binding.etPassword.text.toString())
-//        }
-//
-//        loginViewModel.loginSuccess.observe(this) { success ->
-//            if (success) {
-//                Toast.makeText(this, "Login reușit!", Toast.LENGTH_SHORT).show()
-//            } else {
-//                Toast.makeText(this, "Login eșuat!", Toast.LENGTH_SHORT).show()
-//            }
-//        }
-//
-//        setStyles()
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.drawer_layout)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+
+        setupNavigationDrawer()
+        setupNavigationDrawerHeader()
     }
-//
-//    fun setStyles(){
-//        BackgroundStylerService.setRoundedBackground(
-//            view = binding.flLogoFrame,
-//            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
-//            cornerRadius = 24f * resources.displayMetrics.density,
-////            withRipple = true,
-////            rippleColor = ContextCompat.getColor(this, R.color.ic_launcher_logo),
-//            strokeWidth = (2 * resources.displayMetrics.density).toInt(), // 2dp în px
-//            strokeColor = ContextCompat.getColor(this, R.color.md_theme_tertiaryContainer)
-//        )
-//    }
+
+    private fun setupNavigationDrawer(){
+        setSupportActionBar(binding.toolbar)
+
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
+
+        appBarConfiguration = AppBarConfiguration(
+            setOf(R.id.tasksFragment, R.id.timekeepingFragment),
+            binding.drawerLayout
+        )
+
+        setupActionBarWithNavController(navController, appBarConfiguration)
+        binding.navView.setupWithNavController(navController)
+
+        binding.navView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.logout -> {
+                    showLogoutConfirmationDialog()
+                    true
+                }
+                else -> {
+                    NavigationUI.onNavDestinationSelected(menuItem, navController)
+                    binding.drawerLayout.closeDrawers()
+                    true
+                }
+            }
+        }
+    }
+
+    private fun setupNavigationDrawerHeader(){
+        val headerView = findViewById<NavigationView>(R.id.nav_view).getHeaderView(0)
+        val userName = headerView.findViewById<TextView>(R.id.nav_header_title)
+        userName.text = "Bine ai venit, Andrei"
+    }
+
+    private fun showLogoutConfirmationDialog() {
+        DialogService.showConfirmationDialog(
+            context = this,
+            title = getString(R.string.logout_confirmation_title),
+            message = getString(R.string.logout_confirmation_details),
+//            iconResId = R.drawable.ic_logout,
+            positiveText = getString(R.string.yes),
+            negativeText = getString(R.string.no),
+            onConfirmed = {
+                performLogout()
+            },
+            onCancelled = {
+            }
+        )
+    }
+
+    private fun performLogout(){
+        SecureStorageService.clearAll(this)
+        val intent = Intent(this, LoginActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish() // Omoară și activity-ul curent ca fallback
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+    }
 }

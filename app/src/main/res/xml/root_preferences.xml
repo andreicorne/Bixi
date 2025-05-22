@@ -1,0 +1,28 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Selectare limbă -->
+    <ListPreference
+        android:key="language"
+        android:title="@string/language"
+        android:summary="@string/choose_language"
+        android:entries="@array/language_entries"
+        android:entryValues="@array/language_values"
+        android:defaultValue="ro" />
+
+    <!-- Dark Mode -->
+    <SwitchPreferenceCompat
+        android:key="dark_mode"
+        android:title="@string/dark_mode"
+        android:summary="@string/turn_dark_mode"
+        android:defaultValue="false" />
+
+    <!-- Divider -->
+    <PreferenceCategory android:title="@string/about_the_app" />
+
+    <!-- Versiune aplicație -->
+    <Preference
+        android:key="app_version"
+        android:title="@string/app_version"
+        android:summary="1.0.0"
+        android:selectable="false" />
+</PreferenceScreen>

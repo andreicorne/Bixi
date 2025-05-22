@@ -2,4 +2,33 @@
 <resources>
     <string name="app_name">Bixi</string>
     <string name="username">Nume utilizator</string>
+    <string name="timekeeper">Pontare</string>
+    <string name="tasks">Sarcini</string>
+    <string name="logout">Deconectare</string>
+    <string name="settings">Settings</string>
+    <string name="logout_confirmation_title">Confirmare</string>
+    <string name="logout_confirmation_details">Ești sigur că vrei să te deloghezi?</string>
+    <string name="yes">Da</string>
+    <string name="no">Nu</string>
+
+    <string name="new_text">Nou</string>
+    <string name="in_progress">In progres</string>
+    <string name="overdue">Depășit</string>
+
+    <string name="language">Limba</string>
+    <string name="choose_language">Alege limba aplicației</string>
+    <string name="dark_mode">Mod întunecat</string>
+    <string name="turn_dark_mode">Activează sau dezactivează dark mode</string>
+    <string name="about_the_app">Despre aplicație</string>
+    <string name="app_version">Versiune aplicație</string>
+
+    <string-array name="language_entries">
+        <item>Română</item>
+        <item>Engleză</item>
+    </string-array>
+
+    <string-array name="language_values">
+        <item>ro</item>
+        <item>en</item>
+    </string-array>
 </resources>

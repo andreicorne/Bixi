@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/tasksFragment"
+            android:title="@string/tasks"
+            android:checkable="true"
+            android:icon="@drawable/ic_checklist"  />
+        <item
+            android:id="@+id/timekeepingFragment"
+            android:title="@string/timekeeper"
+            android:checkable="true"
+            android:icon="@drawable/ic_clock"  />
+    </group>
+
+    <group android:id="@+id/group_logout">
+        <item
+            android:id="@+id/settingsFragment"
+            android:title="@string/settings"
+            android:checkable="true"
+            android:icon="@drawable/ic_settings" />
+        <item
+            android:id="@+id/logout"
+            android:title="@string/logout"
+            android:icon="@drawable/ic_logout" />
+    </group>
+</menu>
