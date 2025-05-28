@@ -21,6 +21,9 @@
     <string name="about_the_app">About the app</string>
     <string name="app_version">App version</string>
 
+    <string name="turn_on_the_light_for_start">Turn on the light bulb to start</string>
+    <string name="turn_off_the_light_for_start">Turn off the light to exit</string>
+
     <string-array name="language_entries">
         <item>Romanian</item>
         <item>English</item>
@@ -30,4 +33,14 @@
         <item>ro</item>
         <item>en</item>
     </string-array>
+
+    <string name="create_task">Create task</string>
+    <string name="edit_task">Edit task</string>
+    <string name="title">Title</string>
+    <string name="details">Details</string>
+    <string name="check_list">Check list</string>
+    <string name="check_name">Check name</string>
+    <string name="attachments">Attachments</string>
+    <string name="add">Add</string>
+
 </resources>

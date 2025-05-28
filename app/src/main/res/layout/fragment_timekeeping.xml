@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:animateLayoutChanges="false"
     tools:context=".fragments.TimekeepingFragment">
 
     <TextView
@@ -10,4 +11,9 @@
         android:layout_height="match_parent"
         android:text="Hello" />
 
-</FrameLayout>
+    <com.example.bixi.customViews.BulbSurfaceView
+        android:id="@+id/bulbview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</RelativeLayout>

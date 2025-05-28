@@ -8,11 +8,13 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="92dp"/>
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="96dp"
+        android:layout_height="106dp"
         android:layout_alignParentBottom="true"
         android:background="@drawable/gradient_white_bottom" />
 
@@ -47,5 +49,7 @@
             android:backgroundTint="@drawable/toggle_button_background"
             android:text="@string/overdue"/>
     </com.google.android.material.button.MaterialButtonToggleGroup>
+
+
 
 </RelativeLayout>

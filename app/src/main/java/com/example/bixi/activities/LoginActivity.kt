@@ -1,5 +1,6 @@
 package com.example.bixi.activities
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -11,12 +12,17 @@ import com.example.bixi.R
 import com.example.bixi.customViews.ValidatedTextInputLayout
 import com.example.bixi.databinding.ActivityLoginBinding
 import com.example.bixi.helper.BackgroundStylerService
+import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.viewModels.LoginViewModel
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private val loginViewModel: LoginViewModel by viewModels()
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

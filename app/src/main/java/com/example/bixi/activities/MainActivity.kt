@@ -3,7 +3,10 @@ package com.example.bixi.activities
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -17,6 +20,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.bixi.R
 import com.example.bixi.databinding.ActivityMainBinding
+import com.example.bixi.fragments.TasksFragment
 import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.services.DialogService
 import com.example.bixi.services.SecureStorageService
@@ -30,6 +34,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.toolbar_menu, menu)
+        return true
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,6 +56,25 @@ class MainActivity : AppCompatActivity() {
 
         setupNavigationDrawer()
         setupNavigationDrawerHeader()
+        setToolbarMenuVisibility()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_custom -> {
+                val navHostFragment =
+                    supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+                val currentFragment =
+                    navHostFragment?.childFragmentManager?.primaryNavigationFragment
+
+                if (currentFragment is TasksFragment) {
+                    currentFragment.createTask()
+                }
+
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun setupNavigationDrawer(){
@@ -76,6 +104,15 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
             }
+        }
+    }
+
+    private fun setToolbarMenuVisibility(){
+        setSupportActionBar(binding.toolbar)
+
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            val showButton = destination.id == R.id.tasksFragment
+            binding.toolbar.menu.findItem(R.id.action_custom)?.isVisible = showButton
         }
     }
 
