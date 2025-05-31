@@ -43,5 +43,6 @@
     <string name="check_name">Nume sarcină</string>
     <string name="attachments">Atașamente</string>
     <string name="add">Adaugă</string>
+    <string name="save">Salvează</string>
 
 </resources>

@@ -1,35 +1,26 @@
 package com.example.bixi.activities
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.provider.OpenableColumns
+import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
 import com.example.bixi.R
 import com.example.bixi.adapters.AttachmentListAdapter
 import com.example.bixi.adapters.CheckListAdapter
-import com.example.bixi.databinding.ActivityLoginBinding
 import com.example.bixi.databinding.ActivityTaskDetailsBinding
-import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.models.AttachmentItem
-import com.example.bixi.viewModels.LoginViewModel
 import com.example.bixi.viewModels.TaskDetailsViewModel
+
 
 class TaskDetailsActivity : AppCompatActivity() {
 
@@ -66,64 +57,27 @@ class TaskDetailsActivity : AppCompatActivity() {
         setStyles()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.task_details_menu, menu)
+        return true
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            android.R.id.home -> {
-                onBackPressedDispatcher.onBackPressed() // modern back navigation
+            R.id.action_save -> {
+                Toast.makeText(this, "Salvat!", Toast.LENGTH_SHORT).show()
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
-//    private fun initAttachmentLauncherResult(){
-//        filePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-//            if (result.resultCode == Activity.RESULT_OK) {
-//                val uri: Uri? = result.data?.data
-//                uri?.let {
-//                    // Ai acum fișierul ales (poză sau document)
-//                    handleAttachment(uri)
-//                }
-//            }
-//        }
-//    }
-//
-//    private fun handleAttachment(uri: Uri) {
-//        // Poți deschide fișierul, citi conținutul sau salva referința
-//
-//        val mimeType = contentResolver.getType(uri)
-//        if (mimeType?.startsWith("image/") == true) {
-//            Glide.with(this)
-//                .load(uri)
-//                .into(imageView)
-//        }
-//        else {
-//            val fileName = getFileNameFromUri(uri)
-//            textView.text = "Fișier selectat: $fileName"
-//            imageView.setImageResource(R.drawable.ic_document_generic) // un icon document
-//        }
-//
-//        val fileName = uri.lastPathSegment ?: "Document"
-//        Toast.makeText(this, "Fișier selectat: $fileName", Toast.LENGTH_SHORT).show()
-//    }
-
-//    fun Context.getFileNameFromUri(uri: Uri): String {
-//        var name = "Fișier necunoscut"
-//        val cursor = contentResolver.query(uri, null, null, null, null)
-//        cursor?.use {
-//            if (it.moveToFirst()) {
-//                val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-//                if (index >= 0) {
-//                    name = it.getString(index)
-//                }
-//            }
-//        }
-//        return name
-//    }
-
     private fun initToolbar(){
         setSupportActionBar(binding.topAppBar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.topAppBar.navigationIcon = ContextCompat.getDrawable(this, R.drawable.ic_close)
+        binding.topAppBar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
     }
 
     private fun initCheckList(){
@@ -137,10 +91,6 @@ class TaskDetailsActivity : AppCompatActivity() {
     }
 
     private fun initAttachmentList(){
-//        val sampleList = listOf("Element 1", "Element 2", "Element 3", "Element 4")
-//
-//        binding.rlAttachments.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-//        binding.rlAttachments.adapter = AttachmentListAdapter(sampleList, this)
 
         items = mutableListOf(
             AttachmentItem("Contract de muncă"),

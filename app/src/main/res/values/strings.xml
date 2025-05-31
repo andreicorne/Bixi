@@ -42,5 +42,6 @@
     <string name="check_name">Check name</string>
     <string name="attachments">Attachments</string>
     <string name="add">Add</string>
+    <string name="save">Save</string>
 
 </resources>
