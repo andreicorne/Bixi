@@ -33,4 +33,18 @@ object DialogService {
 
         builder.show()
     }
+
+    fun showMaterialDialog(
+        context: Context,
+        title: String,
+        options: List<String>,
+        onOptionSelected: (index: Int, option: String) -> Unit
+    ) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle(title)
+            .setItems(options.toTypedArray()) { dialog, which ->
+                onOptionSelected(which, options[which])
+            }
+            .show()
+    }
 }

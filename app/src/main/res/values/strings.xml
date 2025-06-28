@@ -13,6 +13,7 @@
     <string name="new_text">New</string>
     <string name="in_progress">In progress</string>
     <string name="overdue">Overdue</string>
+    <string name="finished">Finished</string>
 
     <string name="language">Language</string>
     <string name="choose_language">Choose app language</string>
@@ -43,5 +44,13 @@
     <string name="attachments">Attachments</string>
     <string name="add">Add</string>
     <string name="save">Save</string>
+    <string name="edit">Edit</string>
+    <string name="remove">Remove</string>
+    <string name="upload">Upload</string>
+    <string name="select_employee">Select employee</string>
+    <string name="time_interval">Time interval</string>
+    <string name="start">Start</string>
+    <string name="finish">End</string>
+    <string name="cannot_select_a_past_date">You cannot select a past date/time</string>
 
 </resources>

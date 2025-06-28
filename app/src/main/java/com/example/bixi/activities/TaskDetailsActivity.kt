@@ -1,10 +1,18 @@
 package com.example.bixi.activities
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,10 +24,26 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bixi.R
 import com.example.bixi.adapters.AttachmentListAdapter
 import com.example.bixi.adapters.CheckListAdapter
+import com.example.bixi.constants.AppConstants
+import com.example.bixi.customViews.CustomBottomSheetFragment
 import com.example.bixi.databinding.ActivityTaskDetailsBinding
+import com.example.bixi.enums.AttachmentBottomSheetItemType
+import com.example.bixi.enums.AttachmentType
+import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.models.AttachmentItem
+import com.example.bixi.models.BottomSheetItem
+import com.example.bixi.models.CheckItem
 import com.example.bixi.viewModels.TaskDetailsViewModel
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 
 class TaskDetailsActivity : AppCompatActivity() {
@@ -27,16 +51,19 @@ class TaskDetailsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityTaskDetailsBinding
     private val viewModel: TaskDetailsViewModel by viewModels()
 
-    private lateinit var adapter: AttachmentListAdapter
-    private var items = mutableListOf<AttachmentItem>()
-    private var selectedPosition: Int = -1
+    private lateinit var adapterAttachments: AttachmentListAdapter
+    private var selectedAttachmentPosition: Int = -1
+
+    private lateinit var adapterChecks: CheckListAdapter
+
+    var isShadowVisible = false
 
     private val filePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
-            val uri = result.data?.data ?: return@registerForActivityResult
-            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            items[selectedPosition].uri = uri
-            adapter.notifyItemChanged(selectedPosition)
+            val newUri = result.data?.data ?: return@registerForActivityResult
+            contentResolver.takePersistableUriPermission(newUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            viewModel.updateAttachmentAt(selectedAttachmentPosition) { it.copy(uri = newUri) }
+            viewModel.addAttachmentItem(AttachmentItem())
         }
     }
 
@@ -52,59 +79,190 @@ class TaskDetailsActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         initToolbar()
+        initListeners()
         initCheckList()
         initAttachmentList()
+        initResponsible()
         setStyles()
+        setupViewModel()
+
+        viewModel.getData()
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.task_details_menu, menu)
-        return true
-    }
+    private fun initListeners(){
+        binding.btnAddCheckItem.setOnClickListener {
+            addCheckItem()
+        }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_save -> {
-                Toast.makeText(this, "Salvat!", Toast.LENGTH_SHORT).show()
+        binding.etCheckItem.setOnEditorActionListener { v, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_DONE ||
+                actionId == EditorInfo.IME_ACTION_GO ||
+                actionId == EditorInfo.IME_ACTION_NEXT ||
+                (event != null && event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)) {
+                addCheckItem()
                 true
+            } else {
+                false
             }
-            else -> super.onOptionsItemSelected(item)
+        }
+
+        binding.etStartDate.setOnClickListener {
+            showDateTimePicker(isStart = true)
+        }
+
+        binding.etEndDate.setOnClickListener {
+            showDateTimePicker(isStart = false)
+        }
+
+        binding.svScrollview.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            if (scrollY > 0 && !isShadowVisible) {
+                binding.vToolbarShadow.visibility = View.VISIBLE
+                isShadowVisible = true
+            } else if (scrollY == 0 && isShadowVisible) {
+                binding.vToolbarShadow.visibility = View.GONE
+                isShadowVisible = false
+            }
+        }
+
+        binding.ivDelete.setOnClickListener {
+            animateContentIntoTrash()
+        }
+
+        binding.ivReset.setOnClickListener {
+            animateResetFields()
         }
     }
 
-    private fun initToolbar(){
-        setSupportActionBar(binding.topAppBar)
-        binding.topAppBar.navigationIcon = ContextCompat.getDrawable(this, R.drawable.ic_close)
-        binding.topAppBar.setNavigationOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
-        }
+    private fun showDateTimePicker(isStart: Boolean) {
+        val currentCalendar = Calendar.getInstance()
+
+        val datePicker = DatePickerDialog(
+            this,
+            { _, year, month, dayOfMonth ->
+                val selectedDateTime = Calendar.getInstance()
+                selectedDateTime.set(Calendar.YEAR, year)
+                selectedDateTime.set(Calendar.MONTH, month)
+                selectedDateTime.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+
+                TimePickerDialog(
+                    this,
+                    { _, hourOfDay, minute ->
+                        selectedDateTime.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                        selectedDateTime.set(Calendar.MINUTE, minute)
+                        selectedDateTime.set(Calendar.SECOND, 0)
+                        selectedDateTime.set(Calendar.MILLISECOND, 0)
+
+                        val allowedDelayMs = 60 * 1000 // 60 secunde
+                        if (selectedDateTime.timeInMillis < currentCalendar.timeInMillis - allowedDelayMs) {
+                            Toast.makeText(this, getString(R.string.cannot_select_a_past_date), Toast.LENGTH_SHORT).show()
+                            return@TimePickerDialog
+                        }
+
+                        if (isStart) {
+                            viewModel.setStartDateTime(selectedDateTime)
+
+                            // Dacă endDateTime nu e setată, o setăm automat cu +1 oră
+                            if (viewModel.endDateTime.value == null) {
+                                val endDate = Calendar.getInstance()
+                                endDate.timeInMillis = selectedDateTime.timeInMillis + 60 * 60 * 1000 // +1h
+                                viewModel.setEndDateTime(endDate)
+                            } else {
+                                // Dacă există deja și e mai mică decât startDateTime, o ajustăm
+                                viewModel.endDateTime.value?.let { endDate ->
+                                    if (endDate.before(selectedDateTime)) {
+                                        val newEnd = Calendar.getInstance()
+                                        newEnd.timeInMillis = selectedDateTime.timeInMillis + 60 * 60 * 1000
+                                        viewModel.setEndDateTime(newEnd)
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            viewModel.setEndDateTime(selectedDateTime)
+
+                            viewModel.startDateTime.value?.let { startDate ->
+                                if (startDate.after(selectedDateTime)) {
+                                    val newStart = Calendar.getInstance()
+                                    newStart.timeInMillis = selectedDateTime.timeInMillis - 60 * 60 * 1000 // -1h
+                                    viewModel.setStartDateTime(newStart)
+                                }
+                            }
+                        }
+
+                    },
+                    currentCalendar.get(Calendar.HOUR_OF_DAY),
+                    currentCalendar.get(Calendar.MINUTE),
+                    true
+                ).show()
+            },
+            currentCalendar.get(Calendar.YEAR),
+            currentCalendar.get(Calendar.MONTH),
+            currentCalendar.get(Calendar.DAY_OF_MONTH)
+        )
+
+        datePicker.datePicker.minDate = currentCalendar.timeInMillis
+        datePicker.show()
+    }
+
+
+    private fun addCheckItem(){
+        viewModel.addCheckItem(CheckItem(title =  binding.etCheckItem.text.toString(), isChecked = false))
+        binding.etCheckItem.text.clear()
+
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(binding.etCheckItem.windowToken, 0)
+        binding.etCheckItem.clearFocus()
     }
 
     private fun initCheckList(){
-        val sampleList = listOf("Element 1", "Element 2", "Element 3", "Element 4")
 
         binding.rlCheckList.layoutManager = LinearLayoutManager(this)
-        binding.rlCheckList.adapter = CheckListAdapter(sampleList)
 
-        val divider = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
-        binding.rlCheckList.addItemDecoration(divider)
+        viewModel.checks.observe(this) { newList ->
+            adapterChecks.submitList(newList)
+        }
+
+        adapterChecks = CheckListAdapter { position ->
+        }
+        binding.rlCheckList.adapter = adapterChecks
+        binding.rlCheckList.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
     }
 
     private fun initAttachmentList(){
 
-        items = mutableListOf(
-            AttachmentItem("Contract de muncă"),
-            AttachmentItem("Poză profil"),
-            AttachmentItem("Copie buletin"),
-            AttachmentItem("Adeverință medicală"),
-            AttachmentItem("Diplomă de studii")
-        )
-
-        adapter = AttachmentListAdapter(items) { position ->
-            selectedPosition = position
-            openFilePicker()
+        viewModel.attachments.observe(this) { newList ->
+            adapterAttachments.submitList(newList)
         }
-        binding.rlAttachments.adapter = adapter
+
+        adapterAttachments = AttachmentListAdapter { position ->
+            if(viewModel.attachments.value?.get(position)!!.type == AttachmentType.UNKNOWN){
+                selectedAttachmentPosition = position
+                openFilePicker()
+            }
+            else{
+                runOnUiThread{
+                    val bottomSheetItems = mutableListOf(
+                        BottomSheetItem(getString(R.string.edit), AttachmentBottomSheetItemType.EDIT),
+                        BottomSheetItem(getString(R.string.remove), AttachmentBottomSheetItemType.REMOVE)
+                    )
+                    val bottomSheetFragment = CustomBottomSheetFragment()
+                    bottomSheetFragment.setOptions(bottomSheetItems) { selectedOption ->
+                        when (selectedOption.type) {
+                            AttachmentBottomSheetItemType.EDIT -> {
+                                selectedAttachmentPosition = position
+                                openFilePicker()
+                            }
+                            AttachmentBottomSheetItemType.REMOVE -> {
+                                viewModel.removeAttachmentAt(position)
+                            }
+                            null -> TODO()
+                        }
+                    }
+                    bottomSheetFragment.show(supportFragmentManager, bottomSheetFragment.tag)
+                }
+            }
+        }
+        binding.rlAttachments.adapter = adapterAttachments
         binding.rlAttachments.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
     }
 
@@ -117,15 +275,166 @@ class TaskDetailsActivity : AppCompatActivity() {
         filePickerLauncher.launch(intent)
     }
 
+    private fun initToolbar(){
+        binding.ivBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+    }
+
+    private fun setupViewModel(){
+        viewModel.serverStatusResponse.observe(this) { success ->
+            if (success) {
+                Toast.makeText(this, "Login reușit!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Login eșuat!", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        viewModel.responsible.observe(this) { list ->
+            val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, list)
+            binding.tvResponsible.setAdapter(adapter)
+        }
+
+        viewModel.startDate.observe(this) { startDate ->
+            binding.etStartDate.setText(startDate.toString())
+        }
+
+        viewModel.endDate.observe(this) { endDate ->
+            binding.etEndDate.setText(endDate.toString())
+        }
+
+        viewModel.startDateTime.observe(this) { date ->
+            date?.let {
+                binding.etStartDate.setText(SimpleDateFormat(AppConstants.DATE_FORMAT, Locale.getDefault()).format(it.time))
+            }
+        }
+
+        viewModel.endDateTime.observe(this) { date ->
+            date?.let {
+                binding.etEndDate.setText(SimpleDateFormat(AppConstants.DATE_FORMAT, Locale.getDefault()).format(it.time))
+            }
+        }
+    }
+
+    private fun initResponsible(){
+        binding.tvResponsible.setOnItemClickListener { _, _, position, _ ->
+            val selected = viewModel.responsible.value.get(position)
+            binding.tvResponsible.clearFocus()
+
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(binding.tvResponsible.windowToken, 0)
+        }
+    }
+
     private fun setStyles(){
-//        BackgroundStylerService.setRoundedBackground(
-//            view = binding.rlAddCheckContainer,
-//            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
-//            cornerRadius = 50f * resources.displayMetrics.density,
-////            withRipple = true,
-////            rippleColor = ContextCompat.getColor(this, R.color.ic_launcher_logo),
-//            strokeWidth = (1 * resources.displayMetrics.density).toInt(), // 2dp în px
-//            strokeColor = ContextCompat.getColor(this, R.color.md_theme_onBackground)
-//        )
+        BackgroundStylerService.setRoundedBackground(
+            view = binding.ivBack,
+            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
+            cornerRadius = 48f * resources.displayMetrics.density,
+            withRipple = true,
+            rippleColor = ContextCompat.getColor(this, R.color.md_theme_surfaceVariant),
+        )
+
+        BackgroundStylerService.setRoundedBackground(
+            view = binding.ivReset,
+            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
+            cornerRadius = 48f * resources.displayMetrics.density,
+            withRipple = true,
+            rippleColor = ContextCompat.getColor(this, R.color.md_theme_surfaceVariant),
+        )
+
+        BackgroundStylerService.setRoundedBackground(
+            view = binding.ivDelete,
+            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
+            cornerRadius = 48f * resources.displayMetrics.density,
+            withRipple = true,
+            rippleColor = ContextCompat.getColor(this, R.color.md_theme_surfaceVariant),
+        )
+
+        BackgroundStylerService.setRoundedBackground(
+            view = binding.ivSetDone,
+            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
+            cornerRadius = 48f * resources.displayMetrics.density,
+            withRipple = true,
+            rippleColor = ContextCompat.getColor(this, R.color.md_theme_surfaceVariant),
+        )
+    }
+
+    private fun animateContentIntoTrash() {
+        val contentLocation = IntArray(2)
+        val trashLocation = IntArray(2)
+
+        binding.svScrollview.getLocationInWindow(contentLocation)
+        binding.ivDelete.getLocationInWindow(trashLocation)
+
+        // Centru față de centru, ca să fie mai precis
+        val deltaX = (trashLocation[0] + binding.ivDelete.width / 2f) - (contentLocation[0] + binding.svScrollview.width / 2f)
+        val deltaY = (trashLocation[1] + binding.ivDelete.height / 2f) - (contentLocation[1] + binding.svScrollview.height / 2f)
+
+        binding.svScrollview.animate()
+            .translationX(deltaX)
+            .translationY(deltaY)
+            .scaleX(0.1f)
+            .scaleY(0.1f)
+            .alpha(0f)
+            .setDuration(250L)
+            .withEndAction {
+                finish()
+            }
+            .start()
+
+        val toolbarViews = listOf(
+            binding.ivBack,
+            binding.vToolbarShadow,
+            binding.tvToolbarTitle,
+            binding.ivReset,
+            binding.ivSetDone
+        )
+
+        toolbarViews.forEach { view ->
+            view.animate()
+                .translationX(deltaX)
+                .translationY(0f)
+                .scaleX(0.1f)
+                .scaleY(0.1f)
+                .alpha(0f)
+                .setDuration(150L)
+                .start()
+        }
+
+        binding.ivSetDone.animate()
+            .translationX(dpToPx(-30f))
+            .translationY(0f)
+            .scaleX(0.1f)
+            .scaleY(0.1f)
+            .alpha(0f)
+            .setDuration(150L)
+            .withEndAction {
+                finish()
+            }
+            .start()
+    }
+
+
+    private fun animateResetFields() {
+
+        binding.svScrollview.animate()
+            .translationY(dpToPx(-20f)) // Ridică toate câmpurile
+            .alpha(0f) // Le face invizibile
+            .setDuration(150L)
+            .withEndAction {
+//                resetAllFields()  // Resetează valorile câmpurilor
+                binding.svScrollview.animate()
+                    .translationY(0f) // Le aduce înapoi
+                    .alpha(1f) // Le face vizibile
+                    .setDuration(150L)
+                    .start()
+            }
+            .start()
+    }
+
+    fun dpToPx(dp: Float): Float {
+        val density = resources.displayMetrics.density
+        return dp * density
     }
 }

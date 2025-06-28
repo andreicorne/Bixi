@@ -18,16 +18,18 @@
             android:id="@+id/iv_schedule"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:src="@drawable/ic_schedule"/>
+            android:src="@drawable/ic_schedule"
+            app:tint="@color/md_theme_primary" />
         <TextView
             android:id="@+id/tv_schedule"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_toEndOf="@+id/iv_schedule"
+            android:layout_marginTop="1dp"
             android:layout_marginStart="6dp"
             android:text="Detalii"
             android:textSize="13sp"
-            android:textColor="?attr/colorOnSurfaceVariant"/>
+            android:textColor="@color/md_theme_primary"/>
 
         <TextView
             android:id="@+id/tv_title"

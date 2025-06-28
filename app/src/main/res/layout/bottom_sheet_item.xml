@@ -1,0 +1,16 @@
+<!-- res/layout/option_item.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingTop="20dp"
+    android:paddingBottom="20dp"
+    android:paddingLeft="28dp"
+    android:paddingRight="28dp">
+
+    <TextView
+        style="@style/TextAppearance.Material3.BodyLarge"
+        android:id="@+id/optionText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+</LinearLayout>

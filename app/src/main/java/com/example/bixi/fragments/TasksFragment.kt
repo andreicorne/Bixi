@@ -7,6 +7,8 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.example.bixi.R
 import com.example.bixi.databinding.FragmentTasksBinding
 import com.example.bixi.viewModels.TasksViewModel
@@ -45,6 +47,26 @@ class TasksFragment : Fragment() {
 
         setupList()
         setupBottomNavigation()
+
+        setupViewModel()
+        viewModel.getList()
+
+        binding.progressIndicator.setIndicatorColor(
+            ContextCompat.getColor(context, R.color.md_theme_error),
+            ContextCompat.getColor(context, R.color.md_theme_inversePrimary),
+            ContextCompat.getColor(context, R.color.md_theme_onPrimaryFixed)
+        )
+    }
+
+    private fun setupViewModel(){
+        viewModel.serverStatusResponse.observe(viewLifecycleOwner) { success ->
+//            binding.progressIndicator.visibility = View.GONE
+            if (success) {
+                Toast.makeText(context, "Succes", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Eroare", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun createTask(){
@@ -113,16 +135,34 @@ class TasksFragment : Fragment() {
     }
 
     private fun setupBottomNavigation(){
-        binding.toggleButton.check(binding.btnNew.id)
-        binding.toggleButton.addOnButtonCheckedListener { group, checkedId, isChecked ->
-            if (isChecked) {
-                when (checkedId) {
-                    R.id.btn_new -> showNewTasks()
-                    R.id.btn_in_progress -> showNewTasks()
-                    R.id.btn_overdue -> showNewTasks()
-                }
-            }
-        }
+//        binding.toggleButton.check(binding.btnNew.id)
+//        binding.toggleButton.addOnButtonCheckedListener { group, checkedId, isChecked ->
+//            if (isChecked) {
+//                when (checkedId) {
+//                    R.id.btn_new -> showNewTasks()
+//                    R.id.btn_in_progress -> showNewTasks()
+//                    R.id.btn_overdue -> showNewTasks()
+//                }
+//            }
+//        }
+
+//        binding.bottomNavigation.setOnItemSelectedListener { menuItem ->
+//            when (menuItem.itemId) {
+//                R.id.menu_new -> {
+//                    true
+//                }
+//                R.id.menu_in_progress -> {
+//                    true
+//                }
+//                R.id.menu_overdue -> {
+//                    true
+//                }
+//                R.id.menu_finished -> {
+//                    true
+//                }
+//                else -> false
+//            }
+//        }
     }
 
     private fun showNewTasks(){

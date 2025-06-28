@@ -5,10 +5,20 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        style="@style/Widget.Material3.LinearProgressIndicator"
+        android:id="@+id/progressIndicator"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:indeterminateAnimationType="disjoint" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@+id/progressIndicator"
         android:clipToPadding="false"
         android:paddingBottom="92dp"/>
 
@@ -18,38 +28,54 @@
         android:layout_alignParentBottom="true"
         android:background="@drawable/gradient_white_bottom" />
 
-    <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/toggleButton"
-        android:layout_width="wrap_content"
+<!--    <com.google.android.material.button.MaterialButtonToggleGroup-->
+<!--        android:id="@+id/toggleButton"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginBottom="6dp"-->
+<!--        android:layout_centerHorizontal="true"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        app:singleSelection="true">-->
+<!--        <com.google.android.material.button.MaterialButton-->
+<!--            style="?attr/materialButtonOutlinedStyle"-->
+<!--            android:id="@+id/btn_new"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:checked="true"-->
+<!--            android:backgroundTint="@drawable/toggle_button_background"-->
+<!--            android:text="@string/new_text"/>-->
+<!--        <com.google.android.material.button.MaterialButton-->
+<!--            style="?attr/materialButtonOutlinedStyle"-->
+<!--            android:id="@+id/btn_in_progress"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:backgroundTint="@drawable/toggle_button_background"-->
+<!--            android:text="@string/in_progress"/>-->
+<!--        <com.google.android.material.button.MaterialButton-->
+<!--            style="?attr/materialButtonOutlinedStyle"-->
+<!--            android:id="@+id/btn_overdue"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:backgroundTint="@drawable/toggle_button_background"-->
+<!--            android:text="@string/overdue"/>-->
+<!--        <com.google.android.material.button.MaterialButton-->
+<!--            style="?attr/materialButtonOutlinedStyle"-->
+<!--            android:id="@+id/btn_finished"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:backgroundTint="@drawable/toggle_button_background"-->
+<!--            android:text="Finalizate"/>-->
+<!--    </com.google.android.material.button.MaterialButtonToggleGroup>-->
+
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="6dp"
-        android:layout_centerHorizontal="true"
+        android:layout_gravity="bottom"
         android:layout_alignParentBottom="true"
-        app:singleSelection="true">
-        <com.google.android.material.button.MaterialButton
-            style="?attr/materialButtonOutlinedStyle"
-            android:id="@+id/btn_new"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:backgroundTint="@drawable/toggle_button_background"
-            android:text="@string/new_text"/>
-        <com.google.android.material.button.MaterialButton
-            style="?attr/materialButtonOutlinedStyle"
-            android:id="@+id/btn_in_progress"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@drawable/toggle_button_background"
-            android:text="@string/in_progress"/>
-        <com.google.android.material.button.MaterialButton
-            style="?attr/materialButtonOutlinedStyle"
-            android:id="@+id/btn_overdue"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@drawable/toggle_button_background"
-            android:text="@string/overdue"/>
-    </com.google.android.material.button.MaterialButtonToggleGroup>
-
-
+        app:menu="@menu/task_list_bottom_nav_menu"
+        app:labelVisibilityMode="labeled"
+        style="@style/Widget.Material3.BottomNavigationView" />
 
 </RelativeLayout>
