@@ -1,5 +1,8 @@
 package com.example.bixi.activities
 
+import android.animation.AnimatorSet
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
@@ -46,7 +49,7 @@ import java.util.Date
 import java.util.Locale
 
 
-class TaskDetailsActivity : AppCompatActivity() {
+class TaskDetailsActivity : BaseActivity() {
 
     private lateinit var binding: ActivityTaskDetailsBinding
     private val viewModel: TaskDetailsViewModel by viewModels()
@@ -77,6 +80,7 @@ class TaskDetailsActivity : AppCompatActivity() {
 
         binding = ActivityTaskDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupLoadingOverlay()
 
         initToolbar()
         initListeners()
@@ -125,11 +129,15 @@ class TaskDetailsActivity : AppCompatActivity() {
         }
 
         binding.ivDelete.setOnClickListener {
-            animateContentIntoTrash()
+            onBack()
         }
 
         binding.ivReset.setOnClickListener {
             animateResetFields()
+        }
+
+        binding.ivSetDone.setOnClickListener {
+            showLoading(true)
         }
     }
 
@@ -277,7 +285,7 @@ class TaskDetailsActivity : AppCompatActivity() {
 
     private fun initToolbar(){
         binding.ivBack.setOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
+            onBack()
         }
     }
 
@@ -360,62 +368,6 @@ class TaskDetailsActivity : AppCompatActivity() {
         )
     }
 
-    private fun animateContentIntoTrash() {
-        val contentLocation = IntArray(2)
-        val trashLocation = IntArray(2)
-
-        binding.svScrollview.getLocationInWindow(contentLocation)
-        binding.ivDelete.getLocationInWindow(trashLocation)
-
-        // Centru față de centru, ca să fie mai precis
-        val deltaX = (trashLocation[0] + binding.ivDelete.width / 2f) - (contentLocation[0] + binding.svScrollview.width / 2f)
-        val deltaY = (trashLocation[1] + binding.ivDelete.height / 2f) - (contentLocation[1] + binding.svScrollview.height / 2f)
-
-        binding.svScrollview.animate()
-            .translationX(deltaX)
-            .translationY(deltaY)
-            .scaleX(0.1f)
-            .scaleY(0.1f)
-            .alpha(0f)
-            .setDuration(250L)
-            .withEndAction {
-                finish()
-            }
-            .start()
-
-        val toolbarViews = listOf(
-            binding.ivBack,
-            binding.vToolbarShadow,
-            binding.tvToolbarTitle,
-            binding.ivReset,
-            binding.ivSetDone
-        )
-
-        toolbarViews.forEach { view ->
-            view.animate()
-                .translationX(deltaX)
-                .translationY(0f)
-                .scaleX(0.1f)
-                .scaleY(0.1f)
-                .alpha(0f)
-                .setDuration(150L)
-                .start()
-        }
-
-        binding.ivSetDone.animate()
-            .translationX(dpToPx(-30f))
-            .translationY(0f)
-            .scaleX(0.1f)
-            .scaleY(0.1f)
-            .alpha(0f)
-            .setDuration(150L)
-            .withEndAction {
-                finish()
-            }
-            .start()
-    }
-
-
     private fun animateResetFields() {
 
         binding.svScrollview.animate()
@@ -431,6 +383,10 @@ class TaskDetailsActivity : AppCompatActivity() {
                     .start()
             }
             .start()
+    }
+
+    private fun onBack(){
+        onBackPressedDispatcher.onBackPressed()
     }
 
     fun dpToPx(dp: Float): Float {

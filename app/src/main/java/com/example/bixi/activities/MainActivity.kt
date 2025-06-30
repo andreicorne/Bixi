@@ -5,10 +5,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.Toolbar
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.menu.ActionMenuItemView
+import androidx.appcompat.widget.ActionMenuView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
@@ -38,6 +42,23 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.toolbar_menu, menu)
+
+        val item = menu.findItem(R.id.action_custom)
+        val actionView = item.actionView
+        menuItemView = actionView!!.findViewById(R.id.menu_add_icon)
+
+        // Poți seta click direct aici (sau în onOptionsItemSelected)
+        menuItemView?.setOnClickListener {
+            val navHostFragment =
+                supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+            val currentFragment =
+                navHostFragment?.childFragmentManager?.primaryNavigationFragment
+
+            if (currentFragment is TasksFragment) {
+                currentFragment.createTask(menuItemView)
+            }
+        }
+
         return true
     }
 
@@ -59,23 +80,25 @@ class MainActivity : AppCompatActivity() {
         setToolbarMenuVisibility()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_custom -> {
-                val navHostFragment =
-                    supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
-                val currentFragment =
-                    navHostFragment?.childFragmentManager?.primaryNavigationFragment
+    lateinit var menuItemView: View
 
-                if (currentFragment is TasksFragment) {
-                    currentFragment.createTask()
-                }
-
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
+//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+//        return when (item.itemId) {
+//            R.id.action_custom -> {
+//                val navHostFragment =
+//                    supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+//                val currentFragment =
+//                    navHostFragment?.childFragmentManager?.primaryNavigationFragment
+//
+//                if (currentFragment is TasksFragment) {
+//                    currentFragment.createTask(menuItemView)
+//                }
+//
+//                true
+//            }
+//            else -> super.onOptionsItemSelected(item)
+//        }
+//    }
 
     private fun setupNavigationDrawer(){
         setSupportActionBar(binding.toolbar)

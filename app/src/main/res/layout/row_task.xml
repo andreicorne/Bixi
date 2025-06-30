@@ -9,10 +9,10 @@
     app:cardBackgroundColor="@color/md_theme_surfaceVariant">
 
     <RelativeLayout
-        android:orientation="vertical"
-        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <ImageView
             android:id="@+id/iv_schedule"

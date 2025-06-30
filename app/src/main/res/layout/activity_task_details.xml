@@ -8,6 +8,7 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:clickable="true"
+    android:transitionName="task_details_transition"
     android:focusableInTouchMode="true"
     tools:context=".activities.TaskDetailsActivity">
 
@@ -76,7 +77,6 @@
         android:id="@+id/sv_scrollview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="102dp"
         android:layout_below="@+id/rl_toolbar">
 
         <RelativeLayout
@@ -315,19 +315,4 @@
 
         </RelativeLayout>
     </androidx.core.widget.NestedScrollView>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="106dp"
-        android:layout_alignParentBottom="true"
-        android:background="@drawable/gradient_white_bottom" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_save"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="20dp"
-        android:layout_alignParentBottom="true"
-        android:text="@string/save"/>
-
 </RelativeLayout>

@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import com.example.bixi.R
 import com.example.bixi.databinding.FragmentTasksBinding
@@ -69,9 +70,16 @@ class TasksFragment : Fragment() {
         }
     }
 
-    fun createTask(){
+    fun createTask(iconView: View){
         val intent = Intent(activity, TaskDetailsActivity::class.java)
-        startActivity(intent)
+
+        // Shared Element Transitions
+        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+            requireActivity(),
+            iconView,
+            "task_details_transition"
+        )
+        startActivity(intent, options.toBundle())
     }
 
     private fun setupList(){

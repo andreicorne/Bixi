@@ -15,7 +15,7 @@ import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.viewModels.LoginViewModel
 
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : BaseActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private val loginViewModel: LoginViewModel by viewModels()
@@ -30,11 +30,15 @@ class LoginActivity : AppCompatActivity() {
 
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupLoadingOverlay()
 
         setupViewModel()
         setupInputValidations()
         setupClickListeners()
         setStyles()
+
+        binding.etUsername.setText("info@extravel.be")
+        binding.etPassword.setText("dcttest123")
     }
 
     private fun setupInputValidations(){
@@ -50,6 +54,7 @@ class LoginActivity : AppCompatActivity() {
         binding.btnLogin.setOnClickListener{
 //            binding.usernameLayout.validate()
 
+            showLoading(true)
             loginViewModel.login(binding.etUsername.text.toString(), binding.etPassword.text.toString())
         }
     }
@@ -57,9 +62,10 @@ class LoginActivity : AppCompatActivity() {
     private fun setupViewModel(){
         loginViewModel.loginSuccess.observe(this) { success ->
             if (success) {
-                Toast.makeText(this, "Login reușit!", Toast.LENGTH_SHORT).show()
-                val intent = Intent(this, MainActivity::class.java)
-                startActivity(intent)
+                showLoading(false, {
+                    val intent = Intent(this, MainActivity::class.java)
+                    startActivity(intent)
+                })
             } else {
                 Toast.makeText(this, "Login eșuat!", Toast.LENGTH_SHORT).show()
             }
