@@ -54,4 +54,17 @@
     <string name="finish">Sfârsit</string>
     <string name="cannot_select_a_past_date">Nu poți selecta o dată/ora din trecut</string>
 
+    <string name="forgot_password">Aţi uitat parola?</string>
+    <string name="email">Email</string>
+    <string name="forgot_password_message">Introdu emailul pentru a primi instrucțiuni despre cum să îți resetezi parola</string>
+    <string name="send">Trimite</string>
+    <string name="reset_the_password">Resetează parola</string>
+
+    <string name="server_error_generic_message">Eroare server. Încearcă din nou</string>
+    <string name="server_forgot_password_success">Linkul de resetare a fost trimis. Verifică-ți emailul</string>
+
+    <string name="register">Înregistrează-te</string>
+    <string name="sign_in">Conectează-te</string>
+
+    <string name="comments">Comentarii</string>
 </resources>

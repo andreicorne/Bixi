@@ -32,38 +32,48 @@
             android:layout_marginStart="4dp"
             android:layout_marginTop="8dp"
             android:layout_toEndOf="@+id/iv_back"
-            android:layout_toStartOf="@+id/iv_reset"
+            android:layout_toStartOf="@+id/ll_toolbar_actions"
             android:text="Testare"/>
 
-        <ImageView
-            android:id="@+id/iv_set_done"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:clickable="true"
-            android:padding="11dp"
-            android:layout_marginEnd="10dp"
+        <LinearLayout
+            android:id="@+id/ll_toolbar_actions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:src="@drawable/ic_check"/>
+            android:orientation="horizontal">
+            <ImageView
+                android:id="@+id/iv_reset"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:clickable="true"
+                android:padding="11dp"
+                android:src="@drawable/ic_replay"/>
 
-        <ImageView
-            android:id="@+id/iv_delete"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:clickable="true"
-            android:layout_toStartOf="@+id/iv_set_done"
-            android:padding="11dp"
-            android:layout_marginEnd="2dp"
-            android:src="@drawable/ic_delete"/>
+            <ImageView
+                android:id="@+id/iv_delete"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:clickable="true"
+                android:padding="11dp"
+                android:src="@drawable/ic_delete"/>
 
-        <ImageView
-            android:id="@+id/iv_reset"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:clickable="true"
-            android:layout_toStartOf="@+id/iv_delete"
-            android:padding="11dp"
-            android:layout_marginEnd="2dp"
-            android:src="@drawable/ic_replay"/>
+            <ImageView
+                android:id="@+id/iv_chat"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:clickable="true"
+                android:padding="11dp"
+                android:src="@drawable/ic_chat"/>
+
+            <ImageView
+                android:id="@+id/iv_set_done"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:clickable="true"
+                android:padding="11dp"
+                android:src="@drawable/ic_check"/>
+        </LinearLayout>
+
         <View
             android:id="@+id/v_toolbar_shadow"
             android:layout_width="match_parent"
@@ -95,7 +105,7 @@
                 android:layout_marginRight="20dp" />
 
             <com.example.bixi.customViews.ValidatedTextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                style="@style/Widget.Material3.TextInputLayout.FilledBox"
                 android:id="@+id/titleLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -103,6 +113,11 @@
                 android:layout_marginTop="12dp"
                 android:layout_marginLeft="20dp"
                 android:layout_marginRight="20dp"
+                app:boxCornerRadiusTopEnd="10dp"
+                app:boxCornerRadiusBottomStart="10dp"
+                app:boxCornerRadiusBottomEnd="10dp"
+                app:boxCornerRadiusTopStart="10dp"
+                app:boxStrokeWidth="0dp"
                 android:hint="@string/title">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -111,20 +126,24 @@
                     android:layout_height="wrap_content"/>
             </com.example.bixi.customViews.ValidatedTextInputLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/detailsInputLayout"
+            <com.example.bixi.customViews.ValidatedTextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.FilledBox"
+                android:id="@+id/descriptionInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="20dp"
                 android:layout_marginRight="20dp"
                 android:layout_marginTop="12dp"
                 android:layout_below="@+id/titleLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:hint="@string/details"
-                app:boxBackgroundMode="outline">
+                app:boxCornerRadiusTopEnd="10dp"
+                app:boxCornerRadiusBottomStart="10dp"
+                app:boxCornerRadiusBottomEnd="10dp"
+                app:boxCornerRadiusTopStart="10dp"
+                app:boxStrokeWidth="0dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/detailsEditText"
+                    android:id="@+id/etDescription"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textMultiLine"
@@ -132,18 +151,23 @@
                     android:maxLines="6"
                     android:gravity="top|start"
                     android:scrollbars="vertical" />
-            </com.google.android.material.textfield.TextInputLayout>
+            </com.example.bixi.customViews.ValidatedTextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                style="@style/Widget.Material3.TextInputLayout.FilledBox.ExposedDropdownMenu"
                 android:id="@+id/tl_responsible"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:layout_marginStart="20dp"
                 android:layout_marginEnd="20dp"
-                android:layout_below="@+id/detailsInputLayout"
-                android:hint="@string/select_employee">
+                android:layout_below="@+id/descriptionInputLayout"
+                android:hint="@string/select_employee"
+                app:boxCornerRadiusTopEnd="10dp"
+                app:boxCornerRadiusBottomStart="10dp"
+                app:boxCornerRadiusBottomEnd="10dp"
+                app:boxCornerRadiusTopStart="10dp"
+                app:boxStrokeWidth="0dp">
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/tv_responsible"
@@ -176,9 +200,19 @@
                 android:layout_marginTop="12dp"
                 android:orientation="vertical">
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.FilledBox"
                     android:id="@+id/fl_start_date"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:gravity="center_vertical"
+                    android:foregroundGravity="center_vertical"
+                    app:startIconDrawable="@drawable/ic_calendar"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxStrokeWidth="0dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_start_date"
@@ -192,10 +226,17 @@
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.FilledBox"
                     android:id="@+id/tl_end_date"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp">
+                    android:layout_marginTop="12dp"
+                    app:startIconDrawable="@drawable/ic_calendar"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxStrokeWidth="0dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_end_date"
@@ -315,4 +356,5 @@
 
         </RelativeLayout>
     </androidx.core.widget.NestedScrollView>
+
 </RelativeLayout>

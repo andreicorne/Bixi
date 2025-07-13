@@ -65,6 +65,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation ("androidx.preference:preference:1.2.1")
     implementation("androidx.activity:activity-ktx:1.8.2")
+    implementation(libs.okhttp)
 
 
     testImplementation(libs.junit)

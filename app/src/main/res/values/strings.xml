@@ -53,4 +53,17 @@
     <string name="finish">End</string>
     <string name="cannot_select_a_past_date">You cannot select a past date/time</string>
 
+    <string name="forgot_password">Forgot password?</string>
+    <string name="email">Email</string>
+    <string name="forgot_password_message">Enter your email to receive instructions on how to reset your password.</string>
+    <string name="send">Send</string>
+    <string name="reset_the_password">Reset the password</string>
+
+    <string name="server_error_generic_message">Server error. Try again</string>
+    <string name="server_forgot_password_success">The reset link has been sent. Check your email.</string>
+
+    <string name="register">Register</string>
+    <string name="sign_in">Sign in</string>
+
+    <string name="comments">Comments</string>
 </resources>

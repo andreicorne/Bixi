@@ -27,7 +27,7 @@ class CheckListAdapter(private val listener: (position: Int) -> Unit) :
         }
 
         fun bind(item: CheckItem) {
-            textView.text = item.title
+            textView.text = item.text
             itemView.setOnClickListener {
                 val pos = adapterPosition
                 if (pos != RecyclerView.NO_POSITION) {
@@ -50,7 +50,7 @@ class CheckListAdapter(private val listener: (position: Int) -> Unit) :
 
 class CheckDiffCallback : DiffUtil.ItemCallback<CheckItem>() {
     override fun areItemsTheSame(oldItem: CheckItem, newItem: CheckItem): Boolean {
-        return oldItem.id == newItem.id && oldItem.isChecked == newItem.isChecked && oldItem.title == newItem.title
+        return oldItem.done == newItem.done && oldItem.text == newItem.text
     }
 
     override fun areContentsTheSame(oldItem: CheckItem, newItem: CheckItem): Boolean {

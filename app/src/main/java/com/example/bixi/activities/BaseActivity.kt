@@ -20,6 +20,7 @@ abstract class BaseActivity : AppCompatActivity() {
         loadingOverlay.visibility = View.GONE
 
         rootView.addView(loadingOverlay)
+        loadingOverlay.alpha = 0.0f
     }
 
     fun showLoading(show: Boolean, onFinish: (() -> Unit)? = null) {
@@ -33,9 +34,6 @@ abstract class BaseActivity : AppCompatActivity() {
                 .start()
 
             contentView?.animate()
-                ?.alpha(0.4f)
-                ?.scaleX(0.97f)
-                ?.scaleY(0.97f)
                 ?.setDuration(duration)
                 ?.start()
 
@@ -51,8 +49,6 @@ abstract class BaseActivity : AppCompatActivity() {
 
             contentView?.animate()
                 ?.alpha(1f)
-                ?.scaleX(1f)
-                ?.scaleY(1f)
                 ?.setDuration(duration)
                 ?.start()
         }

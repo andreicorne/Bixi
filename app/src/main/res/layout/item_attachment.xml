@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="88dp"
+    android:layout_height="88dp"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:layout_marginTop="4dp">
+
+    <ImageView
+        android:id="@+id/attachmentIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_document"
+        android:layout_gravity="center_vertical" />
+
+    <TextView
+        android:id="@+id/attachmentName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:ellipsize="middle"
+        android:maxLines="1"
+        android:textSize="14sp"
+        tools:text="Document.pdf" />
+
+</LinearLayout>

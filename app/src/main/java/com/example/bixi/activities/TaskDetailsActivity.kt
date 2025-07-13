@@ -1,29 +1,27 @@
 package com.example.bixi.activities
 
-import android.animation.AnimatorSet
-import android.animation.ArgbEvaluator
-import android.animation.ValueAnimator
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
+import android.util.Log
 import android.view.KeyEvent
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.bixi.AppSession
 import com.example.bixi.R
 import com.example.bixi.adapters.AttachmentListAdapter
 import com.example.bixi.adapters.CheckListAdapter
@@ -37,15 +35,16 @@ import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.BottomSheetItem
 import com.example.bixi.models.CheckItem
+import com.example.bixi.models.api.CreateTaskRequest
+import com.example.bixi.services.RetrofitClient
 import com.example.bixi.viewModels.TaskDetailsViewModel
-import com.google.android.material.datepicker.MaterialDatePicker
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.timepicker.MaterialTimePicker
-import com.google.android.material.timepicker.TimeFormat
+import com.google.gson.Gson
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 
@@ -89,6 +88,7 @@ class TaskDetailsActivity : BaseActivity() {
         initResponsible()
         setStyles()
         setupViewModel()
+        setupBindings()
 
         viewModel.getData()
     }
@@ -137,7 +137,73 @@ class TaskDetailsActivity : BaseActivity() {
         }
 
         binding.ivSetDone.setOnClickListener {
-            showLoading(true)
+            createTask()
+        }
+
+        binding.ivChat.setOnClickListener {
+            val intent = Intent(this, ChatActivity::class.java)
+            startActivity(intent)
+        }
+    }
+
+    fun createTask() {
+        showLoading(true)
+        lifecycleScope.launch {
+            try {
+                val gson = Gson()
+                val checksJson = gson.toJson(viewModel.checks.value)
+
+                val createTaskRequest = CreateTaskRequest(viewModel.title.value!!, viewModel.description.value!!, AppSession.user!!.user.id, checksJson, null)
+
+                val parts = prepareAttachments(baseContext, viewModel.attachments.value!!)
+                val response = RetrofitClient.createTask(createTaskRequest, parts)
+                if (response.success) {
+                } else {
+                }
+                showLoading(false)
+
+            } catch (e: Exception) {
+                showLoading(false)
+                Log.e("API", "Exception: ${e.message}")
+            }
+        }
+    }
+
+    private fun prepareAttachments(
+        context: Context,
+        attachments: List<AttachmentItem>
+    ): List<MultipartBody.Part> {
+        return attachments.mapNotNull { attachment ->
+            val bytes = attachment.uri?.let { uriToByteArray(context, it) } ?: return@mapNotNull null
+            val requestBody = bytes.toRequestBody("application/octet-stream".toMediaTypeOrNull())
+            MultipartBody.Part.createFormData(
+                name = "attachments", // sau "files[]" dacă serverul așteaptă array
+                filename = getFileName(attachment.uri!!),
+                body = requestBody
+            )
+        }
+    }
+
+    private fun getFileName(uri: Uri): String {
+        var result = "Document"
+        val cursor = contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0) result = it.getString(index)
+            }
+        }
+        return result
+    }
+
+    fun uriToByteArray(context: Context, uri: Uri): ByteArray? {
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                input.readBytes()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 
@@ -214,7 +280,7 @@ class TaskDetailsActivity : BaseActivity() {
 
 
     private fun addCheckItem(){
-        viewModel.addCheckItem(CheckItem(title =  binding.etCheckItem.text.toString(), isChecked = false))
+        viewModel.addCheckItem(CheckItem(text =  binding.etCheckItem.text.toString(), done = false))
         binding.etCheckItem.text.clear()
 
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -294,13 +360,25 @@ class TaskDetailsActivity : BaseActivity() {
             if (success) {
                 Toast.makeText(this, "Login reușit!", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Login eșuat!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.server_error_generic_message), Toast.LENGTH_SHORT).show()
             }
         }
 
         viewModel.responsible.observe(this) { list ->
             val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, list)
             binding.tvResponsible.setAdapter(adapter)
+        }
+
+        viewModel.title.observe(this) { newText ->
+            if (binding.titleLayout.editText?.text.toString() != newText) {
+                binding.titleLayout.editText?.setText(newText)
+            }
+        }
+
+        viewModel.description.observe(this) { newText ->
+            if (binding.descriptionInputLayout.editText?.text.toString() != newText) {
+                binding.descriptionInputLayout.editText?.setText(newText)
+            }
         }
 
         viewModel.startDate.observe(this) { startDate ->
@@ -322,6 +400,11 @@ class TaskDetailsActivity : BaseActivity() {
                 binding.etEndDate.setText(SimpleDateFormat(AppConstants.DATE_FORMAT, Locale.getDefault()).format(it.time))
             }
         }
+    }
+
+    private fun setupBindings(){
+        binding.titleLayout.bindTo(viewModel::setTitle)
+        binding.descriptionInputLayout.bindTo(viewModel::setDescription)
     }
 
     private fun initResponsible(){
@@ -353,6 +436,14 @@ class TaskDetailsActivity : BaseActivity() {
 
         BackgroundStylerService.setRoundedBackground(
             view = binding.ivDelete,
+            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
+            cornerRadius = 48f * resources.displayMetrics.density,
+            withRipple = true,
+            rippleColor = ContextCompat.getColor(this, R.color.md_theme_surfaceVariant),
+        )
+
+        BackgroundStylerService.setRoundedBackground(
+            view = binding.ivChat,
             backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
             cornerRadius = 48f * resources.displayMetrics.density,
             withRipple = true,

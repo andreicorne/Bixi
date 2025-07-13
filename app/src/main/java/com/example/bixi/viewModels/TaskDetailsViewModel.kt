@@ -6,13 +6,25 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bixi.AppSession
+import com.example.bixi.enums.TaskStatus
 import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.CheckItem
+import com.example.bixi.models.api.CreateTaskRequest
+import com.example.bixi.models.api.GetTasksRequest
 import com.example.bixi.services.RetrofitClient
+import com.example.bixi.services.UIMapperService
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
-class TaskDetailsViewModel : ViewModel() {
+class TaskDetailsViewModel : BaseViewModel() {
+
+    private val _title = MutableLiveData<String>()
+    val title: LiveData<String> = _title
+
+    private val _description = MutableLiveData<String>()
+    val description: LiveData<String> = _description
 
     private val _startDateTime = MutableLiveData<Calendar?>()
     val startDateTime: LiveData<Calendar?> = _startDateTime
@@ -41,6 +53,14 @@ class TaskDetailsViewModel : ViewModel() {
 
     fun getData(){
         _responsible.value = listOf("Marius", "Cosmin", "Flavius")
+    }
+
+    fun setTitle(newTitle: String) {
+        _title.value = newTitle
+    }
+
+    fun setDescription(newDescription: String) {
+        _description.value = newDescription
     }
 
     fun setStartDateTime(calendar: Calendar) {

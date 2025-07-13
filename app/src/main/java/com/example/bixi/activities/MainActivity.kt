@@ -13,6 +13,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.menu.ActionMenuItemView
 import androidx.appcompat.widget.ActionMenuView
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
@@ -25,12 +26,14 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.bixi.R
 import com.example.bixi.databinding.ActivityMainBinding
 import com.example.bixi.fragments.TasksFragment
+import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.services.DialogService
+import com.example.bixi.services.RetrofitClient
 import com.example.bixi.services.SecureStorageService
 import com.google.android.material.navigation.NavigationView
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
@@ -68,6 +71,7 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupLoadingOverlay()
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.drawer_layout)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -78,6 +82,7 @@ class MainActivity : AppCompatActivity() {
         setupNavigationDrawer()
         setupNavigationDrawerHeader()
         setToolbarMenuVisibility()
+        setStyles()
     }
 
     lateinit var menuItemView: View
@@ -145,6 +150,9 @@ class MainActivity : AppCompatActivity() {
         userName.text = "Bine ai venit, Andrei"
     }
 
+    private fun setStyles(){
+    }
+
     private fun showLogoutConfirmationDialog() {
         DialogService.showConfirmationDialog(
             context = this,
@@ -162,6 +170,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun performLogout(){
+        RetrofitClient.logout()
         SecureStorageService.clearAll(this)
         val intent = Intent(this, LoginActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

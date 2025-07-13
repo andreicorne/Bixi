@@ -8,11 +8,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.example.bixi.AppSession
 import com.example.bixi.R
+import com.example.bixi.constants.StorageKeys
 import com.example.bixi.customViews.ValidatedTextInputLayout
 import com.example.bixi.databinding.ActivityLoginBinding
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
+import com.example.bixi.services.JsonConverterService
+import com.example.bixi.services.SecureStorageService
 import com.example.bixi.viewModels.LoginViewModel
 
 class LoginActivity : BaseActivity() {
@@ -57,17 +61,29 @@ class LoginActivity : BaseActivity() {
             showLoading(true)
             loginViewModel.login(binding.etUsername.text.toString(), binding.etPassword.text.toString())
         }
+
+        binding.tvForgotPassword.setOnClickListener {
+            val intent = Intent(this, ForgotPasswordActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun setupViewModel(){
+        loginViewModel.isLoading.observe(this) { isLoading ->
+            showLoading(isLoading)
+        }
+
         loginViewModel.loginSuccess.observe(this) { success ->
             if (success) {
                 showLoading(false, {
+                    AppSession.user!!.user.password = binding.etPassword.text.toString()
+                    SecureStorageService.putString(this, StorageKeys.USER_TOKEN, JsonConverterService.toJson(AppSession.user))
                     val intent = Intent(this, MainActivity::class.java)
                     startActivity(intent)
                 })
             } else {
-                Toast.makeText(this, "Login eșuat!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.server_error_generic_message), Toast.LENGTH_SHORT).show()
+                showLoading(false)
             }
         }
     }
@@ -86,6 +102,14 @@ class LoginActivity : BaseActivity() {
 //            rippleColor = ContextCompat.getColor(this, R.color.ic_launcher_logo),
             strokeWidth = (2 * resources.displayMetrics.density).toInt(), // 2dp în px
             strokeColor = ContextCompat.getColor(this, R.color.md_theme_tertiaryContainer)
+        )
+
+        BackgroundStylerService.setRoundedBackground(
+            view = binding.tvForgotPassword,
+            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_background),
+            cornerRadius = 20f * resources.displayMetrics.density,
+            withRipple = true,
+            rippleColor = ContextCompat.getColor(this, R.color.md_theme_surfaceVariant),
         )
     }
 }

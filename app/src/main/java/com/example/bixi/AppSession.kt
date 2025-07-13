@@ -1,9 +1,10 @@
 package com.example.bixi
 
+import com.example.bixi.models.api.LoginResponse
 import com.example.bixi.models.api.UserData
 
 object AppSession {
-    var user: UserData? = null
+    var user: LoginResponse? = null
     var token: String? = null
     var isDarkMode: Boolean = false
     var language: String = "ro"

@@ -1,6 +1,7 @@
 package com.example.bixi.fragments
 
 import android.content.Intent
+import android.graphics.Color
 import androidx.fragment.app.viewModels
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -14,17 +15,20 @@ import com.example.bixi.R
 import com.example.bixi.databinding.FragmentTasksBinding
 import com.example.bixi.viewModels.TasksViewModel
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.bixi.activities.MainActivity
 import com.example.bixi.activities.TaskDetailsActivity
 import com.example.bixi.models.api.TaskListItem
 import com.example.bixi.adapters.TaskListAdapter
+import com.example.bixi.enums.TaskStatus
 
 class TasksFragment : Fragment() {
 
     private var _binding: FragmentTasksBinding? = null
     private val binding get() = _binding!!
 
+    private lateinit var adapterTasks: TaskListAdapter
+
     companion object {
-        fun newInstance() = TasksFragment()
     }
 
     private val viewModel: TasksViewModel by viewModels()
@@ -48,9 +52,9 @@ class TasksFragment : Fragment() {
 
         setupList()
         setupBottomNavigation()
-
+        setupEmptyTaskViewAnimation()
         setupViewModel()
-        viewModel.getList()
+        viewModel.getList(viewModel.selectedStatus.value)
 
         binding.progressIndicator.setIndicatorColor(
             ContextCompat.getColor(context, R.color.md_theme_error),
@@ -60,12 +64,25 @@ class TasksFragment : Fragment() {
     }
 
     private fun setupViewModel(){
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            showLoading(isLoading)
+        }
+
         viewModel.serverStatusResponse.observe(viewLifecycleOwner) { success ->
-//            binding.progressIndicator.visibility = View.GONE
-            if (success) {
-                Toast.makeText(context, "Succes", Toast.LENGTH_SHORT).show()
-            } else {
+            if (!success) {
                 Toast.makeText(context, "Eroare", Toast.LENGTH_SHORT).show()
+            }
+            showLoading(false)
+        }
+
+        viewModel.tasks.observe(viewLifecycleOwner) { newList ->
+            adapterTasks.submitList(newList)
+            if(newList.isEmpty()){
+                binding.ivEmpty.visibility = View.VISIBLE
+                binding.ivEmpty.startAnimation()
+            }
+            else{
+                binding.ivEmpty.visibility = View.GONE
             }
         }
     }
@@ -85,94 +102,90 @@ class TasksFragment : Fragment() {
     private fun setupList(){
         binding.recyclerView.layoutManager = LinearLayoutManager(activity)
 
-        val items = listOf(
-            TaskListItem(
-                title = "Turnare fundație",
-                details = "Echipa va pregăti terenul, va monta cofrajele și va turna betonul pentru fundația principală a clădirii. Asigurați-vă că totul este aliniat și nivelat înainte de turnare.",
-                dateRange = "07:00 - 12:00"
-            ),
-            TaskListItem(
-                title = "Montare armătură",
-                details = "Montarea barelor de oțel în cofrajele fundației. Este important să fie respectate distanțele de acoperire și poziționarea conform planului tehnic.",
-                dateRange = "08:00 - 11:30"
-            ),
-            TaskListItem(
-                title = "Zidărie parter",
-                details = "Zidirea pereților exteriori și interiori de la parter cu blocuri ceramice. Se va verifica periodic alinierea cu firul cu plumb.",
-                dateRange = "09:00 - 14:00"
-            ),
-            TaskListItem(
-                title = "Izolație termică fațadă",
-                details = "Aplicarea panourilor de polistiren expandat pe exteriorul clădirii, urmată de plasă de fibră și strat de adeziv. Asigurați o lipire uniformă și evitarea punților termice.",
-                dateRange = "10:00 - 15:00"
-            ),
-            TaskListItem(
-                title = "Montaj ferestre termopan",
-                details = "Echipa va monta ferestrele din PVC cu geam termopan la etajul 1. Se va verifica etanșarea și alinierea corectă a fiecărei unități.",
-                dateRange = "08:30 - 13:00"
-            ),
-            TaskListItem(
-                title = "Instalații electrice interioare",
-                details = "Tragerea cablurilor electrice prin pereți, amplasarea dozelor și pregătirea pentru tabloul electric. Trebuie respectate toate normele de siguranță în vigoare.",
-                dateRange = "07:30 - 12:30"
-            ),
-            TaskListItem(
-                title = "Turnare șapă autonivelantă",
-                details = "Aplicarea unui strat de șapă autonivelantă pe pardoselile camerelor de la parter. Se va lucra în echipe mici pentru acuratețe.",
-                dateRange = "09:00 - 11:00"
-            ),
-            TaskListItem(
-                title = "Montaj structură acoperiș",
-                details = "Montarea grinzilor și căpriorilor acoperișului. Este necesară atenție sporită la unghiuri și fixarea elementelor structurale pentru siguranță.",
-                dateRange = "08:00 - 14:00"
-            ),
-            TaskListItem(
-                title = "Vopsire interioară camere",
-                details = "Aplicarea vopselei lavabile în camerele deja tencuite. Se va folosi grund și două straturi de lavabilă, cu verificare vizuală pentru uniformitate.",
-                dateRange = "10:00 - 16:00"
-            ),
-            TaskListItem(
-                title = "Curățenie finală de șantier",
-                details = "Colectarea și evacuarea resturilor de materiale, măturarea și curățarea generală a spațiilor de lucru pentru predarea către beneficiar.",
-                dateRange = "14:00 - 17:00"
-            )
-        )
+        adapterTasks = TaskListAdapter{ position ->
+//            val options = ActivityOptions.makeSceneTransitionAnimation(
+//                it.context as Activity,
+//                holder.container, // View și tag-ul său
+//                "task_details_transition"
+//            )
 
-        val adapter = TaskListAdapter(items)
-        binding.recyclerView.adapter = adapter
+            val item = viewModel.tasks.value.get(position)
+            // Navigăm către activitate cu animația specificată
+            val intent = Intent(context, TaskDetailsActivity::class.java).apply {
+                putExtra("TASK_TITLE", item.title)
+                putExtra("TASK_DETAILS", item.description)
+                putExtra("TASK_DATE", item.getFormattedPeriod())
+            }
+
+//            it.context.startActivity(intent, options.toBundle())
+            startActivity(intent)
+        }
+        binding.recyclerView.adapter = adapterTasks
+    }
+
+    private fun setupEmptyTaskViewAnimation() {
+        // Adaugă toate cele 20 de imagini
+        val frameResources = listOf(
+            R.drawable.empty_task_1,
+            R.drawable.empty_task_2,
+            R.drawable.empty_task_3,
+            R.drawable.empty_task_4,
+            R.drawable.empty_task_5,
+            R.drawable.empty_task_6,
+            R.drawable.empty_task_7,
+            R.drawable.empty_task_8,
+            R.drawable.empty_task_9,
+            R.drawable.empty_task_10,
+            R.drawable.empty_task_11,
+            R.drawable.empty_task_12,
+            R.drawable.empty_task_13,
+            R.drawable.empty_task_14,
+            R.drawable.empty_task_15,
+            R.drawable.empty_task_16,
+            R.drawable.empty_task_17,
+            R.drawable.empty_task_18,
+            R.drawable.empty_task_19,
+            R.drawable.empty_task_19,
+            R.drawable.empty_task_19,
+            R.drawable.empty_task_18,
+            R.drawable.empty_task_17,
+            R.drawable.empty_task_16,
+            R.drawable.empty_task_15,
+            R.drawable.empty_task_14,
+            R.drawable.empty_task_13,
+            R.drawable.empty_task_14,
+            R.drawable.empty_task_15,
+            R.drawable.empty_task_15,
+            R.drawable.empty_task_14,
+            R.drawable.empty_task_13,
+//            R.drawable.empty_task_16,
+//            R.drawable.empty_task_15,
+//            R.drawable.empty_task_14,
+//            R.drawable.empty_task_13,
+            )
+
+        binding.ivEmpty.addFrames(frameResources)
+        binding.ivEmpty.setFrameDuration(30)
+        binding.ivEmpty.setLooping(false)
+
+        binding.ivEmpty.setOnAnimationCompleteListener {
+        }
+    }
+
+    private fun showLoading(isLoading: Boolean, onFinish: (() -> Unit)? = null){
+        (activity as MainActivity).showLoading(isLoading, onFinish)
     }
 
     private fun setupBottomNavigation(){
-//        binding.toggleButton.check(binding.btnNew.id)
-//        binding.toggleButton.addOnButtonCheckedListener { group, checkedId, isChecked ->
-//            if (isChecked) {
-//                when (checkedId) {
-//                    R.id.btn_new -> showNewTasks()
-//                    R.id.btn_in_progress -> showNewTasks()
-//                    R.id.btn_overdue -> showNewTasks()
-//                }
-//            }
-//        }
 
-//        binding.bottomNavigation.setOnItemSelectedListener { menuItem ->
-//            when (menuItem.itemId) {
-//                R.id.menu_new -> {
-//                    true
-//                }
-//                R.id.menu_in_progress -> {
-//                    true
-//                }
-//                R.id.menu_overdue -> {
-//                    true
-//                }
-//                R.id.menu_finished -> {
-//                    true
-//                }
-//                else -> false
-//            }
-//        }
-    }
-
-    private fun showNewTasks(){
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_new -> viewModel.setStatus(TaskStatus.NEW)
+                R.id.menu_in_progress -> viewModel.setStatus(TaskStatus.IN_PROGRESS)
+                R.id.menu_overdue -> viewModel.setStatus(TaskStatus.ARCHIVED)
+                R.id.menu_finished -> viewModel.setStatus(TaskStatus.DONE)
+            }
+            true
+        }
     }
 }

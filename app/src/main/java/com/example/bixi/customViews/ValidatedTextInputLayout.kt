@@ -1,8 +1,10 @@
 package com.example.bixi.customViews
 
 import android.content.Context
+import android.text.Editable
 import android.util.AttributeSet
 import com.google.android.material.textfield.TextInputLayout
+import android.text.TextWatcher
 
 class ValidatedTextInputLayout @JvmOverloads constructor(
     context: Context,
@@ -21,6 +23,19 @@ class ValidatedTextInputLayout @JvmOverloads constructor(
                     validate()
                 }
             }
+        }
+    }
+
+    fun bindTo(setter: (String) -> Unit) {
+        post {
+            editText?.addTextChangedListener(object : TextWatcher {
+                override fun afterTextChanged(s: Editable?) {
+                    setter(s.toString())
+                }
+
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            })
         }
     }
 

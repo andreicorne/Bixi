@@ -140,4 +140,10 @@
     <color name="md_theme_surfaceContainer_highContrast">#E4E1E9</color>
     <color name="md_theme_surfaceContainerHigh_highContrast">#D5D3DB</color>
     <color name="md_theme_surfaceContainerHighest_highContrast">#C7C5CD</color>
+
+    <color name="loading_background">#90FBF8FF</color>
+    <color name="navigation_tint_task_new">#c2c272</color>
+    <color name="navigation_tint_task_in_progress">#7672c2</color>
+    <color name="navigation_tint_task_overdue">#c27272</color>
+    <color name="navigation_tint_task_finished">#72c285</color>
 </resources>

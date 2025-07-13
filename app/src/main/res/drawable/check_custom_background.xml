@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--<shape xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:shape="rectangle">-->
+
+<!--    <solid android:color="@color/md_theme_background" />-->
+<!--    <stroke-->
+<!--    android:width="1dp"-->
+<!--    android:color="@color/md_theme_onSurfaceVariant" />-->
+<!--    <corners-->
+<!--    android:topLeftRadius="8dp"-->
+<!--    android:topRightRadius="8dp"-->
+<!--    android:bottomLeftRadius="24dp"-->
+<!--    android:bottomRightRadius="24dp" /> </shape>-->
+<!-- md_theme_surfaceContainerHigh -->
+
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
 
-    <solid android:color="@color/md_theme_background" />
-    <stroke
-    android:width="1dp"
-    android:color="@color/md_theme_onSurfaceVariant" />
+    <solid android:color="@color/md_theme_surfaceContainer_highContrast" />
     <corners
-    android:topLeftRadius="8dp"
-    android:topRightRadius="8dp"
-    android:bottomLeftRadius="24dp"
-    android:bottomRightRadius="24dp" /> </shape>
+        android:topLeftRadius="8dp"
+        android:topRightRadius="8dp"
+        android:bottomLeftRadius="24dp"
+        android:bottomRightRadius="24dp" /> </shape>
