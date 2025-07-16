@@ -1,5 +1,6 @@
 package com.example.bixi.fragments
 
+import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
 import androidx.fragment.app.viewModels
@@ -9,6 +10,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import com.example.bixi.R
@@ -25,6 +28,8 @@ class TasksFragment : Fragment() {
 
     private var _binding: FragmentTasksBinding? = null
     private val binding get() = _binding!!
+
+    private lateinit var taskResultLauncher: ActivityResultLauncher<Intent>
 
     private lateinit var adapterTasks: TaskListAdapter
 
@@ -54,6 +59,7 @@ class TasksFragment : Fragment() {
         setupBottomNavigation()
         setupEmptyTaskViewAnimation()
         setupViewModel()
+        setupResultLauncher()
         viewModel.getList(viewModel.selectedStatus.value)
 
         binding.progressIndicator.setIndicatorColor(
@@ -87,7 +93,22 @@ class TasksFragment : Fragment() {
         }
     }
 
+    private fun setupResultLauncher(){
+        taskResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val taskCreated = result.data?.getBooleanExtra("task_created", false) ?: false
+                if (taskCreated) {
+                    Toast.makeText(requireContext(), getString(R.string.successfully_created), Toast.LENGTH_SHORT).show()
+//                    viewModel.setStatus(TaskStatus.NEW)
+                    binding.bottomNavigation.selectedItemId = R.id.menu_new
+                } else {
+                }
+            }
+        }
+    }
+
     fun createTask(iconView: View){
+
         val intent = Intent(activity, TaskDetailsActivity::class.java)
 
         // Shared Element Transitions
@@ -96,7 +117,7 @@ class TasksFragment : Fragment() {
             iconView,
             "task_details_transition"
         )
-        startActivity(intent, options.toBundle())
+        taskResultLauncher.launch(intent, options)
     }
 
     private fun setupList(){

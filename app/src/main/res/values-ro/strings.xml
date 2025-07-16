@@ -67,4 +67,11 @@
     <string name="sign_in">Conectează-te</string>
 
     <string name="comments">Comentarii</string>
+    <string name="gallery">Galerie</string>
+    <string name="camera">Camera</string>
+    <string name="document">Document</string>
+    <string name="choose_attachment">Alege atașament</string>
+    <string name="now">Acum</string>
+
+    <string name="successfully_created">Creat cu succes</string>
 </resources>

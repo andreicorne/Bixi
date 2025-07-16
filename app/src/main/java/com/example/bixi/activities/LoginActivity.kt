@@ -41,8 +41,8 @@ class LoginActivity : BaseActivity() {
         setupClickListeners()
         setStyles()
 
-        binding.etUsername.setText("info@extravel.be")
-        binding.etPassword.setText("dcttest123")
+//        binding.etUsername.setText("info@extravel.be")
+//        binding.etPassword.setText("dcttest123")
     }
 
     private fun setupInputValidations(){

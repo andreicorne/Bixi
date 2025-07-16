@@ -66,4 +66,11 @@
     <string name="sign_in">Sign in</string>
 
     <string name="comments">Comments</string>
+    <string name="gallery">Gallery</string>
+    <string name="camera">Camera</string>
+    <string name="document">Document</string>
+    <string name="choose_attachment">Choose attachment</string>
+    <string name="now">Now</string>
+
+    <string name="successfully_created">Successfully created</string>
 </resources>

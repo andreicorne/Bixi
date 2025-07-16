@@ -62,6 +62,7 @@ class SplashActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun navigateToHome(){
         SecureStorageService.putString(this, StorageKeys.USER_TOKEN, JsonConverterService.toJson(AppSession.user))
         val intent = Intent(this, MainActivity::class.java)

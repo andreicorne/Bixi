@@ -1,5 +1,6 @@
 package com.example.bixi.activities
 
+import android.app.Activity
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
@@ -57,6 +58,8 @@ class TaskDetailsActivity : BaseActivity() {
     private var selectedAttachmentPosition: Int = -1
 
     private lateinit var adapterChecks: CheckListAdapter
+
+    private var taskWasCreated: Boolean = false
 
     var isShadowVisible = false
 
@@ -158,6 +161,7 @@ class TaskDetailsActivity : BaseActivity() {
                 val parts = prepareAttachments(baseContext, viewModel.attachments.value!!)
                 val response = RetrofitClient.createTask(createTaskRequest, parts)
                 if (response.success) {
+                    onSuccessfullyCreated()
                 } else {
                 }
                 showLoading(false)
@@ -167,6 +171,11 @@ class TaskDetailsActivity : BaseActivity() {
                 Log.e("API", "Exception: ${e.message}")
             }
         }
+    }
+
+    private fun onSuccessfullyCreated(){
+        taskWasCreated = true
+        onBack()
     }
 
     private fun prepareAttachments(
@@ -477,6 +486,9 @@ class TaskDetailsActivity : BaseActivity() {
     }
 
     private fun onBack(){
+        val resultIntent = Intent()
+        resultIntent.putExtra("task_created", taskWasCreated) // taskWasCreated = true sau false
+        setResult(Activity.RESULT_OK, resultIntent)
         onBackPressedDispatcher.onBackPressed()
     }
 

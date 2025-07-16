@@ -12,12 +12,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
 
-class ChatViewModel : ViewModel() {
+class ChatViewModel : BaseViewModel() {
     private val _messages = MutableLiveData<List<Message>>()
     val messages: LiveData<List<Message>> = _messages
-
-    private val _isLoading = MutableLiveData<Boolean>(false)
-    val isLoading: LiveData<Boolean> = _isLoading
 
     private val _hasMore = MutableLiveData<Boolean>(true)
     val hasMore: LiveData<Boolean> = _hasMore
@@ -26,10 +23,10 @@ class ChatViewModel : ViewModel() {
     private val allMessages = mutableListOf<Message>()
 
     fun loadMessages() {
-        if (_isLoading.value == true) return
+        if (isLoading.value == true) return
 
         viewModelScope.launch {
-            _isLoading.value = true
+            setLoading(true)
 
             try {
                 // Simulate API call
@@ -44,16 +41,16 @@ class ChatViewModel : ViewModel() {
             } catch (e: Exception) {
                 // Handle error
             } finally {
-                _isLoading.value = false
+                setLoading(false)
             }
         }
     }
 
     fun loadMoreMessages() {
-        if (_isLoading.value == true || _hasMore.value == false) return
+        if (isLoading.value == true || _hasMore.value == false) return
 
         viewModelScope.launch {
-            _isLoading.value = true
+            setLoading(true)
 
             try {
                 // Simulate API call
@@ -68,18 +65,18 @@ class ChatViewModel : ViewModel() {
             } catch (e: Exception) {
                 // Handle error
             } finally {
-                _isLoading.value = false
+                setLoading(false)
             }
         }
     }
 
-    fun sendMessage(text: String) {
+    fun sendMessage(text: String, attachments: List<Attachment> = emptyList()) {
         viewModelScope.launch {
             val newMessage = Message(
                 id = UUID.randomUUID().toString(),
                 text = text,
                 timestamp = Date(),
-                attachments = emptyList(),
+                attachments = attachments,
                 isFromCurrentUser = true
             )
 
@@ -90,10 +87,23 @@ class ChatViewModel : ViewModel() {
             // Simulate sending to server
             try {
                 delay(500)
-                // API call to send message
+                // API call to send message with attachments
+                // Here you would upload the attachments first, then send the message
+                uploadAttachments(attachments)
             } catch (e: Exception) {
                 // Handle error - remove message or show retry
+                allMessages.removeAt(0)
+                _messages.value = allMessages.toList()
             }
+        }
+    }
+
+    private suspend fun uploadAttachments(attachments: List<Attachment>) {
+        // Simulate attachment upload
+        attachments.forEach { attachment ->
+            delay(200) // Simulate upload time per attachment
+            // Here you would upload each attachment to your server
+            // and update the attachment URL with the server URL
         }
     }
 
@@ -105,21 +115,57 @@ class ChatViewModel : ViewModel() {
         val end = minOf(start + messagesPerPage, totalMessages)
 
         val messages = (start until end).map { index ->
+            val attachments = when {
+                index % 8 == 0 -> listOf(
+                    Attachment(
+                        id = "att_img_$index",
+                        url = "https://picsum.photos/400/300?random=$index",
+                        type = AttachmentType.IMAGE,
+                        name = "image_$index.jpg",
+                        size = 1024 * 200
+                    )
+                )
+                index % 12 == 0 -> listOf(
+                    Attachment(
+                        id = "att_doc_$index",
+                        url = "https://example.com/document$index.pdf",
+                        type = AttachmentType.DOCUMENT,
+                        name = "Document_$index.pdf",
+                        size = 1024 * 500
+                    )
+                )
+                index % 15 == 0 -> listOf(
+                    Attachment(
+                        id = "att_img1_$index",
+                        url = "https://picsum.photos/400/300?random=${index}a",
+                        type = AttachmentType.IMAGE,
+                        name = "image1_$index.jpg",
+                        size = 1024 * 180
+                    ),
+                    Attachment(
+                        id = "att_img2_$index",
+                        url = "https://picsum.photos/400/300?random=${index}b",
+                        type = AttachmentType.IMAGE,
+                        name = "image2_$index.jpg",
+                        size = 1024 * 220
+                    )
+                )
+                else -> emptyList()
+            }
+
             Message(
                 id = "msg_$index",
-                text = "Message $index: This is a sample message with some content",
+                text = if (attachments.isNotEmpty()) {
+                    when {
+                        attachments.size > 1 -> "In mesajul asta am trimis niste poze"
+                        attachments.first().type == AttachmentType.IMAGE -> "Iti trimit poza asta"
+                        else -> "Aici iti trimit documentul"
+                    }
+                } else {
+                    "Mesaj $index: Mesaj simplu aici. Ii un simplu mesaj, fara continut special"
+                },
                 timestamp = Date(System.currentTimeMillis() - (index * 60000)),
-                attachments = if (index % 5 == 0) {
-                    listOf(
-                        Attachment(
-                            id = "att_$index",
-                            url = "https://example.com/file$index.pdf",
-                            type = AttachmentType.DOCUMENT,
-                            name = "Document_$index.pdf",
-                            size = 1024 * 100
-                        )
-                    )
-                } else emptyList(),
+                attachments = attachments,
                 isFromCurrentUser = index % 3 == 0
             )
         }

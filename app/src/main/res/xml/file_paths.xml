@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Pentru storage-ul intern al aplicației -->
+    <files-path name="internal_files" path="." />
+    <files-path name="photos" path="photos/" />
+
+    <!-- Pentru cache -->
+    <cache-path name="cache" path="." />
+
+    <!-- Pentru storage-ul extern (opțional) -->
+    <external-files-path name="external_files" path="." />
+    <external-cache-path name="external_cache" path="." />
+</paths>

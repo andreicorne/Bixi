@@ -147,7 +147,7 @@ class MainActivity : BaseActivity() {
     private fun setupNavigationDrawerHeader(){
         val headerView = findViewById<NavigationView>(R.id.nav_view).getHeaderView(0)
         val userName = headerView.findViewById<TextView>(R.id.nav_header_title)
-        userName.text = "Bine ai venit, Andrei"
+        userName.text = "Bine ai venit!"
     }
 
     private fun setStyles(){

@@ -77,7 +77,7 @@ class BulbSurfaceView(context: Context, attrs: AttributeSet?) : SurfaceView(cont
 
         lightBulbOnBitmap = getScaledBitmap(R.drawable.ic_light_bulb_on2, lampWidth, lampHeight)
         lightBulbOffBitmap = getScaledBitmap(R.drawable.ic_light_bulb_off, lampWidth, lampHeight)
-        backgroundBitmap = getScaledBitmap(R.drawable.ic_lamp_background, height, height)
+//        backgroundBitmap = getScaledBitmap(R.drawable.ic_lamp_background, height, height)
 
         textPaint = Paint().apply {
             color = Color.WHITE // Color.argb(255, 255, 162, 0)

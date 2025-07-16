@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/message_background_received"
         android:minWidth="80dp"
-        android:maxWidth="260dp"
+        android:maxWidth="280dp"
         android:orientation="vertical"
         android:padding="12dp">
 
@@ -28,7 +28,7 @@
 
         <LinearLayout
             android:id="@+id/attachmentContainer"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:orientation="vertical"
