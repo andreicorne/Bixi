@@ -16,11 +16,9 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bixi.AppSession
 import com.example.bixi.R
@@ -32,6 +30,8 @@ import com.example.bixi.customViews.CustomBottomSheetFragment
 import com.example.bixi.databinding.ActivityTaskDetailsBinding
 import com.example.bixi.enums.AttachmentBottomSheetItemType
 import com.example.bixi.enums.AttachmentType
+import com.example.bixi.helper.AttachmentConverter
+import com.example.bixi.helper.AttachmentSelectionHelper
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.models.AttachmentItem
@@ -49,7 +49,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-
 class TaskDetailsActivity : BaseActivity() {
 
     private lateinit var binding: ActivityTaskDetailsBinding
@@ -61,17 +60,10 @@ class TaskDetailsActivity : BaseActivity() {
     private lateinit var adapterChecks: CheckListAdapter
 
     private var taskWasCreated: Boolean = false
-
     var isShadowVisible = false
 
-    private val filePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val newUri = result.data?.data ?: return@registerForActivityResult
-            contentResolver.takePersistableUriPermission(newUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            viewModel.updateAttachmentAt(selectedAttachmentPosition) { it.copy(uri = newUri) }
-            viewModel.addAttachmentItem(AttachmentItem())
-        }
-    }
+    // Sistem centralizat pentru atașamente
+    private lateinit var attachmentHelper: AttachmentSelectionHelper
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.applyLocale(newBase))
@@ -93,6 +85,9 @@ class TaskDetailsActivity : BaseActivity() {
             viewModel.taskId = taskId
         }
 
+        // Inițializează helper-ul pentru atașamente
+        setupAttachmentHelper()
+
         initToolbar()
         initListeners()
         initCheckList()
@@ -101,6 +96,29 @@ class TaskDetailsActivity : BaseActivity() {
         setStyles()
         setupViewModel()
         setupBindings()
+    }
+
+    private fun setupAttachmentHelper() {
+        attachmentHelper = AttachmentSelectionHelper(this) { attachments ->
+            handleAttachmentsFromHelper(attachments)
+        }
+        attachmentHelper.initialize()
+    }
+
+    private fun handleAttachmentsFromHelper(attachments: List<com.example.bixi.models.Attachment>) {
+        attachments.forEach { attachment ->
+            val attachmentItem = AttachmentConverter.toAttachmentItem(attachment)
+
+            if (selectedAttachmentPosition != -1) {
+                viewModel.updateAttachmentAt(selectedAttachmentPosition) {
+                    attachmentItem
+                }
+                selectedAttachmentPosition = -1
+            } else {
+                // Adaugă atașamentul înaintea ultimului element (care este container-ul gol)
+                viewModel.addAttachmentBeforeLast(attachmentItem)
+            }
+        }
     }
 
     private fun initListeners(){
@@ -156,7 +174,7 @@ class TaskDetailsActivity : BaseActivity() {
         }
     }
 
-    fun createTask() {
+    private fun createTask() {
         showLoading(true)
         lifecycleScope.launch {
             try {
@@ -193,7 +211,7 @@ class TaskDetailsActivity : BaseActivity() {
             val bytes = attachment.uri?.let { uriToByteArray(context, it) } ?: return@mapNotNull null
             val requestBody = bytes.toRequestBody("application/octet-stream".toMediaTypeOrNull())
             MultipartBody.Part.createFormData(
-                name = "attachments", // sau "files[]" dacă serverul așteaptă array
+                name = "attachments",
                 filename = getFileName(attachment.uri!!),
                 body = requestBody
             )
@@ -251,13 +269,11 @@ class TaskDetailsActivity : BaseActivity() {
                         if (isStart) {
                             viewModel.setStartDateTime(selectedDateTime)
 
-                            // Dacă endDateTime nu e setată, o setăm automat cu +1 oră
                             if (viewModel.endDateTime.value == null) {
                                 val endDate = Calendar.getInstance()
-                                endDate.timeInMillis = selectedDateTime.timeInMillis + 60 * 60 * 1000 // +1h
+                                endDate.timeInMillis = selectedDateTime.timeInMillis + 60 * 60 * 1000
                                 viewModel.setEndDateTime(endDate)
                             } else {
-                                // Dacă există deja și e mai mică decât startDateTime, o ajustăm
                                 viewModel.endDateTime.value?.let { endDate ->
                                     if (endDate.before(selectedDateTime)) {
                                         val newEnd = Calendar.getInstance()
@@ -273,7 +289,7 @@ class TaskDetailsActivity : BaseActivity() {
                             viewModel.startDateTime.value?.let { startDate ->
                                 if (startDate.after(selectedDateTime)) {
                                     val newStart = Calendar.getInstance()
-                                    newStart.timeInMillis = selectedDateTime.timeInMillis - 60 * 60 * 1000 // -1h
+                                    newStart.timeInMillis = selectedDateTime.timeInMillis - 60 * 60 * 1000
                                     viewModel.setStartDateTime(newStart)
                                 }
                             }
@@ -294,7 +310,6 @@ class TaskDetailsActivity : BaseActivity() {
         datePicker.show()
     }
 
-
     private fun addCheckItem(){
         viewModel.addCheckItem(CheckItem(text =  binding.etCheckItem.text.toString(), done = false))
         binding.etCheckItem.text.clear()
@@ -305,7 +320,6 @@ class TaskDetailsActivity : BaseActivity() {
     }
 
     private fun initCheckList(){
-
         binding.rlCheckList.layoutManager = LinearLayoutManager(this)
 
         viewModel.checks.observe(this) { newList ->
@@ -319,7 +333,6 @@ class TaskDetailsActivity : BaseActivity() {
     }
 
     private fun initAttachmentList(){
-
         viewModel.attachments.observe(this) { newList ->
             adapterAttachments.submitList(newList)
         }
@@ -328,9 +341,9 @@ class TaskDetailsActivity : BaseActivity() {
             val attachment = viewModel.attachments.value?.get(position)
 
             if (attachment?.uri == null) {
-                // Pentru empty container, deschide file picker
+                // Pentru empty container, deschide selecția de atașamente
                 selectedAttachmentPosition = position
-                openFilePicker()
+                attachmentHelper.showAttachmentPicker()
             } else {
                 // Pentru attachments existente, afișează bottom sheet pentru opțiuni
                 runOnUiThread{
@@ -354,7 +367,7 @@ class TaskDetailsActivity : BaseActivity() {
                             }
                             AttachmentBottomSheetItemType.EDIT -> {
                                 selectedAttachmentPosition = position
-                                openFilePicker()
+                                attachmentHelper.showAttachmentPicker()
                             }
                             AttachmentBottomSheetItemType.REMOVE -> {
                                 viewModel.removeAttachmentAt(position)
@@ -368,15 +381,6 @@ class TaskDetailsActivity : BaseActivity() {
         }
         binding.rlAttachments.adapter = adapterAttachments
         binding.rlAttachments.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-    }
-
-    private fun openFilePicker() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            type = "*/*"
-            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "application/pdf", "application/msword"))
-            addCategory(Intent.CATEGORY_OPENABLE)
-        }
-        filePickerLauncher.launch(intent)
     }
 
     private fun initToolbar(){
@@ -494,16 +498,14 @@ class TaskDetailsActivity : BaseActivity() {
     }
 
     private fun animateResetFields() {
-
         binding.svScrollview.animate()
-            .translationY(dpToPx(-20f)) // Ridică toate câmpurile
-            .alpha(0f) // Le face invizibile
+            .translationY(dpToPx(-20f))
+            .alpha(0f)
             .setDuration(150L)
             .withEndAction {
-//                resetAllFields()  // Resetează valorile câmpurilor
                 binding.svScrollview.animate()
-                    .translationY(0f) // Le aduce înapoi
-                    .alpha(1f) // Le face vizibile
+                    .translationY(0f)
+                    .alpha(1f)
                     .setDuration(150L)
                     .start()
             }
@@ -512,7 +514,7 @@ class TaskDetailsActivity : BaseActivity() {
 
     private fun onBack(){
         val resultIntent = Intent()
-        resultIntent.putExtra("task_created", taskWasCreated) // taskWasCreated = true sau false
+        resultIntent.putExtra("task_created", taskWasCreated)
         setResult(Activity.RESULT_OK, resultIntent)
         onBackPressedDispatcher.onBackPressed()
     }

@@ -2,37 +2,22 @@ package com.example.bixi.activities
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.view.View
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bixi.R
 import com.example.bixi.adapters.AttachmentPreviewAdapter
 import com.example.bixi.adapters.MessageAdapter
 import com.example.bixi.databinding.ActivityChatBinding
+import com.example.bixi.helper.AttachmentSelectionHelper
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.models.Attachment
-import com.example.bixi.models.AttachmentType
 import com.example.bixi.viewModels.ChatViewModel
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 
 class ChatActivity : BaseActivity() {
 
@@ -40,53 +25,10 @@ class ChatActivity : BaseActivity() {
     private val viewModel: ChatViewModel by viewModels()
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var attachmentPreviewAdapter: AttachmentPreviewAdapter
-    private var photoFile: File? = null
     private val selectedAttachments = mutableListOf<Attachment>()
 
-    // Activity Result Launchers
-    private val galleryLauncher = registerForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            handleSelectedImages(uris)
-        }
-    }
-
-    private val documentLauncher = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { handleSelectedDocument(it) }
-    }
-
-    private val cameraLauncher = registerForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            photoFile?.let { file ->
-                val uri = FileProvider.getUriForFile(
-                    this,
-                    "${packageName}.fileprovider",
-                    file
-                )
-                handleSelectedImages(listOf(uri))
-            }
-        }
-    }
-
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val cameraPermission = permissions[android.Manifest.permission.CAMERA] ?: false
-        val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions[android.Manifest.permission.READ_MEDIA_IMAGES] ?: false
-        } else {
-            permissions[android.Manifest.permission.READ_EXTERNAL_STORAGE] ?: false
-        }
-
-        if (!cameraPermission && !storagePermission) {
-            Toast.makeText(this, "Permissions are required for attachments", Toast.LENGTH_SHORT).show()
-        }
-    }
+    // Sistem centralizat pentru atașamente
+    private lateinit var attachmentHelper: AttachmentSelectionHelper
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.applyLocale(newBase))
@@ -100,15 +42,24 @@ class ChatActivity : BaseActivity() {
         setContentView(binding.root)
         setupLoadingOverlay()
 
+        // Inițializează helper-ul pentru atașamente
+        setupAttachmentHelper()
+
         setStyles()
         setupRecyclerView()
         setupAttachmentPreview()
         initListeners()
-        requestPermissions()
 
-        // Observe messages
         observeMessages()
         setupViewModel()
+    }
+
+    private fun setupAttachmentHelper() {
+        attachmentHelper = AttachmentSelectionHelper(this) { attachments ->
+            selectedAttachments.addAll(attachments)
+            updateAttachmentPreview()
+        }
+        attachmentHelper.initialize()
     }
 
     private fun setupViewModel(){
@@ -126,9 +77,9 @@ class ChatActivity : BaseActivity() {
 
         binding.rvAttachmentPreview.apply {
             adapter = attachmentPreviewAdapter
-            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(
+            layoutManager = LinearLayoutManager(
                 this@ChatActivity,
-                androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL,
+                LinearLayoutManager.HORIZONTAL,
                 false
             )
         }
@@ -174,7 +125,7 @@ class ChatActivity : BaseActivity() {
         }
 
         binding.btnAttachment.setOnClickListener {
-            openAttachmentPicker()
+            attachmentHelper.showAttachmentPicker()
         }
 
         // Add text watcher to update send button state
@@ -197,176 +148,6 @@ class ChatActivity : BaseActivity() {
         }
     }
 
-    private fun requestPermissions() {
-        val permissions = mutableListOf<String>()
-
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
-            != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(android.Manifest.permission.CAMERA)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES)
-                != PackageManager.PERMISSION_GRANTED) {
-                permissions.add(android.Manifest.permission.READ_MEDIA_IMAGES)
-            }
-        } else {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-                permissions.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-        }
-
-        if (permissions.isNotEmpty()) {
-            permissionLauncher.launch(permissions.toTypedArray())
-        }
-    }
-
-    private fun openAttachmentPicker() {
-        val bottomSheetDialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_attachment_picker, null)
-        bottomSheetDialog.setContentView(view)
-
-        view.findViewById<androidx.cardview.widget.CardView>(R.id.cardCamera)?.setOnClickListener {
-            bottomSheetDialog.dismiss()
-            openCamera()
-        }
-
-        view.findViewById<androidx.cardview.widget.CardView>(R.id.cardGallery)?.setOnClickListener {
-            bottomSheetDialog.dismiss()
-            openGallery()
-        }
-
-        view.findViewById<androidx.cardview.widget.CardView>(R.id.cardDocument)?.setOnClickListener {
-            bottomSheetDialog.dismiss()
-            openDocumentPicker()
-        }
-
-        bottomSheetDialog.show()
-    }
-
-    private fun openCamera() {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
-            != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Camera permission is required", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val photoFileName = "photo_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.jpg"
-
-        // Creează directorul pentru photos în storage-ul intern
-        val photoDir = File(filesDir, "photos")
-        if (!photoDir.exists()) {
-            photoDir.mkdirs()
-        }
-
-        photoFile = File(photoDir, photoFileName)
-
-        try {
-            val photoURI = FileProvider.getUriForFile(
-                this,
-                "${packageName}.fileprovider",
-                photoFile!!
-            )
-            cameraLauncher.launch(photoURI)
-        } catch (e: IllegalArgumentException) {
-            Toast.makeText(this, "Error creating photo URI: ${e.message}", Toast.LENGTH_SHORT).show()
-            // Log pentru debugging
-            android.util.Log.e("ChatActivity", "FileProvider error", e)
-            android.util.Log.e("ChatActivity", "Photo file path: ${photoFile?.absolutePath}")
-        }
-    }
-
-    private fun openGallery() {
-        val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
-        } else {
-            ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-        }
-
-        if (!hasPermission) {
-            Toast.makeText(this, "Storage permission is required", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        galleryLauncher.launch("image/*")
-    }
-
-    private fun openDocumentPicker() {
-        documentLauncher.launch("*/*")
-    }
-
-    private fun handleSelectedImages(uris: List<Uri>) {
-        uris.forEach { uri ->
-            val fileName = getFileName(uri) ?: "image_${System.currentTimeMillis()}.jpg"
-            val fileSize = getFileSize(uri)
-
-            val attachment = Attachment(
-                id = UUID.randomUUID().toString(),
-                url = uri.toString(),
-                type = AttachmentType.IMAGE,
-                name = fileName,
-                size = fileSize
-            )
-
-            selectedAttachments.add(attachment)
-        }
-
-        updateAttachmentPreview()
-    }
-
-    private fun handleSelectedDocument(uri: Uri) {
-        val fileName = getFileName(uri) ?: "document_${System.currentTimeMillis()}"
-        val fileSize = getFileSize(uri)
-        val mimeType = contentResolver.getType(uri)
-
-        val attachmentType = when {
-            mimeType?.startsWith("image/") == true -> AttachmentType.IMAGE
-            mimeType?.startsWith("video/") == true -> AttachmentType.VIDEO
-            mimeType?.startsWith("audio/") == true -> AttachmentType.AUDIO
-            else -> AttachmentType.DOCUMENT
-        }
-
-        val attachment = Attachment(
-            id = UUID.randomUUID().toString(),
-            url = uri.toString(),
-            type = attachmentType,
-            name = fileName,
-            size = fileSize
-        )
-
-        selectedAttachments.add(attachment)
-        updateAttachmentPreview()
-    }
-
-    private fun getFileName(uri: Uri): String? {
-        var fileName: String? = null
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        cursor?.use {
-            if (it.moveToFirst()) {
-                val nameIndex = it.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
-                if (nameIndex != -1) {
-                    fileName = it.getString(nameIndex)
-                }
-            }
-        }
-        return fileName
-    }
-
-    private fun getFileSize(uri: Uri): Long? {
-        var fileSize: Long? = null
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        cursor?.use {
-            if (it.moveToFirst()) {
-                val sizeIndex = it.getColumnIndex(MediaStore.MediaColumns.SIZE)
-                if (sizeIndex != -1) {
-                    fileSize = it.getLong(sizeIndex)
-                }
-            }
-        }
-        return fileSize
-    }
-
     private fun updateAttachmentPreview() {
         if (selectedAttachments.isNotEmpty()) {
             binding.attachmentPreviewContainer.visibility = View.VISIBLE
@@ -375,7 +156,6 @@ class ChatActivity : BaseActivity() {
             binding.attachmentPreviewContainer.visibility = View.GONE
         }
 
-        // Update send button state
         updateSendButtonState()
     }
 
@@ -389,7 +169,6 @@ class ChatActivity : BaseActivity() {
         val hasAttachments = selectedAttachments.isNotEmpty()
         binding.btnSend.isEnabled = hasText || hasAttachments
 
-        // Optional: Change send button appearance based on state
         binding.btnSend.alpha = if (hasText || hasAttachments) 1.0f else 0.5f
     }
 
