@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("kotlin-kapt")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -66,7 +67,6 @@ dependencies {
     implementation ("androidx.preference:preference:1.2.1")
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation(libs.okhttp)
-
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

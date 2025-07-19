@@ -74,4 +74,13 @@
     <string name="now">Acum</string>
 
     <string name="successfully_created">Creat cu succes</string>
+
+    <string name="back">Înapoi</string>
+    <string name="download">Descarcă</string>
+    <string name="share">Partajează</string>
+    <string name="open_external">Deschide extern</string>
+    <string name="view">Vizualizează</string>
+    <string name="error">Eroare</string>
+
+    <string name="attachment_image">attachment_image</string>
 </resources>

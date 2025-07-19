@@ -27,6 +27,7 @@ import com.example.bixi.R
 import com.example.bixi.adapters.AttachmentListAdapter
 import com.example.bixi.adapters.CheckListAdapter
 import com.example.bixi.constants.AppConstants
+import com.example.bixi.constants.NavigationConstants
 import com.example.bixi.customViews.CustomBottomSheetFragment
 import com.example.bixi.databinding.ActivityTaskDetailsBinding
 import com.example.bixi.enums.AttachmentBottomSheetItemType
@@ -84,6 +85,14 @@ class TaskDetailsActivity : BaseActivity() {
         setContentView(binding.root)
         setupLoadingOverlay()
 
+        val taskId = intent.getStringExtra(NavigationConstants.TASK_ID_NAV)
+        if(taskId.isNullOrBlank()){
+            viewModel.isCreateMode = true
+        }
+        else{
+            viewModel.taskId = taskId
+        }
+
         initToolbar()
         initListeners()
         initCheckList()
@@ -92,8 +101,6 @@ class TaskDetailsActivity : BaseActivity() {
         setStyles()
         setupViewModel()
         setupBindings()
-
-        viewModel.getData()
     }
 
     private fun initListeners(){
@@ -318,19 +325,33 @@ class TaskDetailsActivity : BaseActivity() {
         }
 
         adapterAttachments = AttachmentListAdapter { position ->
-            if(viewModel.attachments.value?.get(position)!!.type == AttachmentType.UNKNOWN){
+            val attachment = viewModel.attachments.value?.get(position)
+
+            if (attachment?.uri == null) {
+                // Pentru empty container, deschide file picker
                 selectedAttachmentPosition = position
                 openFilePicker()
-            }
-            else{
+            } else {
+                // Pentru attachments existente, afișează bottom sheet pentru opțiuni
                 runOnUiThread{
                     val bottomSheetItems = mutableListOf(
+                        BottomSheetItem(getString(R.string.view), AttachmentBottomSheetItemType.VIEW),
                         BottomSheetItem(getString(R.string.edit), AttachmentBottomSheetItemType.EDIT),
                         BottomSheetItem(getString(R.string.remove), AttachmentBottomSheetItemType.REMOVE)
                     )
                     val bottomSheetFragment = CustomBottomSheetFragment()
                     bottomSheetFragment.setOptions(bottomSheetItems) { selectedOption ->
                         when (selectedOption.type) {
+                            AttachmentBottomSheetItemType.VIEW -> {
+                                val fileName = attachment.serverData?.name ?: "Document"
+                                AttachmentViewerActivity.startActivity(
+                                    context = this@TaskDetailsActivity,
+                                    uri = attachment.uri,
+                                    type = attachment.type,
+                                    serverData = attachment.serverData,
+                                    name = fileName
+                                )
+                            }
                             AttachmentBottomSheetItemType.EDIT -> {
                                 selectedAttachmentPosition = position
                                 openFilePicker()
@@ -408,6 +429,10 @@ class TaskDetailsActivity : BaseActivity() {
             date?.let {
                 binding.etEndDate.setText(SimpleDateFormat(AppConstants.DATE_FORMAT, Locale.getDefault()).format(it.time))
             }
+        }
+
+        if(!viewModel.isCreateMode){
+            viewModel.getData()
         }
     }
 

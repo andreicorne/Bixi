@@ -1,5 +1,6 @@
 package com.example.bixi.services
 
+import android.util.Log
 import com.example.bixi.interfaces.AuthApi
 import com.example.bixi.models.api.ApiResponse
 import com.example.bixi.models.api.CreateTaskRequest
@@ -8,6 +9,7 @@ import com.example.bixi.models.api.GetTasksRequest
 import com.example.bixi.models.api.LoginRequest
 import com.example.bixi.models.api.LoginResponse
 import com.example.bixi.models.api.RefreshTokenRequest
+import com.example.bixi.models.api.TaskDetailsResponse
 import com.example.bixi.models.api.TaskListResponse
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -106,6 +108,7 @@ object RetrofitClient {
                 ApiResponse(false, code, null)
             }
         } catch (e: Exception) {
+            Log.e("### Retrofit", e.message.toString())
             ApiResponse(false, -1, null) // sau log/return e.message
         }
     }
@@ -132,6 +135,17 @@ object RetrofitClient {
 
         val bearerToken = "Bearer $validToken"
         return handleApiCall { instance.getTasks(parameter, bearerToken) }
+    }
+
+    suspend fun getTaskById(taskId: String): ApiResponse<TaskDetailsResponse> {
+        val validToken = ensureValidToken()
+
+        if (validToken == null) {
+            return ApiResponse(false, -1, null)
+        }
+
+        val bearerToken = "Bearer $validToken"
+        return handleApiCall { instance.getTaskById(taskId, bearerToken) }
     }
 
     suspend fun createTask(parameter: CreateTaskRequest, attachments: List<MultipartBody.Part>): ApiResponse<Any> {

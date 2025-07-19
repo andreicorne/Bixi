@@ -20,8 +20,8 @@ import com.example.bixi.viewModels.TasksViewModel
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bixi.activities.MainActivity
 import com.example.bixi.activities.TaskDetailsActivity
-import com.example.bixi.models.api.TaskListItem
 import com.example.bixi.adapters.TaskListAdapter
+import com.example.bixi.constants.NavigationConstants
 import com.example.bixi.enums.TaskStatus
 
 class TasksFragment : Fragment() {
@@ -133,9 +133,7 @@ class TasksFragment : Fragment() {
             val item = viewModel.tasks.value.get(position)
             // Navigăm către activitate cu animația specificată
             val intent = Intent(context, TaskDetailsActivity::class.java).apply {
-                putExtra("TASK_TITLE", item.title)
-                putExtra("TASK_DETAILS", item.description)
-                putExtra("TASK_DATE", item.getFormattedPeriod())
+                putExtra(NavigationConstants.TASK_ID_NAV, item.id)
             }
 
 //            it.context.startActivity(intent, options.toBundle())

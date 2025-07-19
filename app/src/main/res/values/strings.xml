@@ -73,4 +73,13 @@
     <string name="now">Now</string>
 
     <string name="successfully_created">Successfully created</string>
+
+    <string name="back">Back</string>
+    <string name="download">Download</string>
+    <string name="share">Share</string>
+    <string name="open_external">Open externally</string>
+    <string name="view">View</string>
+    <string name="error">Error</string>
+
+    <string name="attachment_image">attachment_image</string>
 </resources>

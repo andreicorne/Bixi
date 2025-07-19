@@ -59,8 +59,18 @@ class AttachmentListAdapter(private val listener: (position: Int) -> Unit) :
 
         fun bind(item: AttachmentItem) {
             if (item.uri != null) {
-                val mimeType = itemView.context.contentResolver.getType(item.uri!!)
-                if (mimeType?.startsWith("image/") == true) {
+                // Verifică dacă este imagine folosind type-ul din AttachmentItem sau serverData
+                val isImage = when {
+                    item.type == AttachmentType.IMAGE -> true
+                    item.serverData?.type?.startsWith("image/") == true -> true
+                    else -> {
+                        // Fallback: verifică MIME type-ul local pentru URI-uri locale
+                        val mimeType = itemView.context.contentResolver.getType(item.uri!!)
+                        mimeType?.startsWith("image/") == true
+                    }
+                }
+
+                if (isImage) {
                     Glide.with(itemView.context).load(item.uri).into(imageIv)
                     photoContainer.visibility = View.VISIBLE
                     documentContainer.visibility = View.GONE
@@ -68,7 +78,10 @@ class AttachmentListAdapter(private val listener: (position: Int) -> Unit) :
                 } else {
                     photoContainer.visibility = View.GONE
                     documentContainer.visibility = View.VISIBLE
-                    fileNameView.text = getFileName(itemView.context, item.uri!!)
+
+                    // Folosește numele din serverData dacă există, altfel extrage din URI
+                    val fileName = item.serverData?.name ?: getFileName(itemView.context, item.uri!!)
+                    fileNameView.text = fileName
                     item.type = AttachmentType.DOCUMENT
                 }
                 emptyContainer.visibility = View.GONE
@@ -83,7 +96,20 @@ class AttachmentListAdapter(private val listener: (position: Int) -> Unit) :
             itemView.setOnClickListener {
                 val pos = adapterPosition
                 if (pos != RecyclerView.NO_POSITION) {
-                    listener(pos)
+                    // Dacă nu este empty container, deschide viewer-ul
+                    if (item.uri != null) {
+                        val fileName = item.serverData?.name ?: getFileName(itemView.context, item.uri!!)
+                        com.example.bixi.activities.AttachmentViewerActivity.startActivity(
+                            context = itemView.context,
+                            uri = item.uri,
+                            type = item.type,
+                            serverData = item.serverData,
+                            name = fileName
+                        )
+                    } else {
+                        // Pentru empty container, apelează listener-ul original
+                        listener(pos)
+                    }
                 }
             }
         }

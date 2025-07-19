@@ -24,7 +24,6 @@ import com.example.bixi.enums.AttachmentType
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.UITaskList
-import com.example.bixi.models.api.TaskListItem
 
 class TaskListAdapter(private val listener: (position: Int) -> Unit) :
     ListAdapter<UITaskList, TaskListAdapter.ViewHolder>(TasksDiffCallback()) {
@@ -33,13 +32,21 @@ class TaskListAdapter(private val listener: (position: Int) -> Unit) :
         val titleTv: TextView = itemView.findViewById(R.id.tv_title)
         val detailsTv: TextView = itemView.findViewById(R.id.tv_details)
         val scheduleTv: TextView = itemView.findViewById(R.id.tv_schedule)
+        val assigneeTv: TextView = itemView.findViewById(R.id.tv_assignee_name)
 
         init {
+            BackgroundStylerService.setRoundedBackground(
+                view = assigneeTv,
+                backgroundColor = ContextCompat.getColor(itemView.context, R.color.md_theme_background),
+                cornerRadius = 10f * itemView.context.resources.displayMetrics.density,
+            )
+            assigneeTv.setTextColor(ContextCompat.getColor(itemView.context, R.color.md_theme_onBackground))
         }
 
         fun bind(item: UITaskList) {
             titleTv.text = item.title
             detailsTv.text = item.description
+            assigneeTv.text = item.assigneeName
             scheduleTv.text = item.getFormattedPeriod()
 
             itemView.setOnTouchListener { view, event ->
