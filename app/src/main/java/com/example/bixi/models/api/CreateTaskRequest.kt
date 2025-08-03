@@ -4,6 +4,8 @@ data class CreateTaskRequest(
     val title: String,
     val description: String,
     val creatorId: String,
+    val assigneeId: String,
     val checklist: String,
-    val attachments: ByteArray?
+    val startDate: String,
+    val endDate: String
 )

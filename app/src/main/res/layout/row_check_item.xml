@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:background="@color/md_theme_surfaceContainer_highContrast">
 
     <com.google.android.material.checkbox.MaterialCheckBox
         android:id="@+id/cb_check"
@@ -14,5 +15,32 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="2dp"
         android:layout_centerVertical="true"
+        android:layout_toStartOf="@+id/ll_actions_container"
         android:layout_toEndOf="@+id/cb_check"/>
+    <LinearLayout
+        android:id="@+id/ll_actions_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btn_delete"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_delete" />
+
+        <ImageView
+            android:id="@+id/iv_drag_handle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:clickable="true"
+            android:scaleType="centerInside"
+            android:visibility="visible"
+            android:src="@drawable/ic_drag_handle" />
+    </LinearLayout>
+
 </RelativeLayout>

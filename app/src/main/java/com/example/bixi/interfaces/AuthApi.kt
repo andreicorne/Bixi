@@ -43,6 +43,9 @@ interface AuthApi {
         @Part("description") description: RequestBody,
         @Part("creatorId") creatorId: RequestBody,
         @Part("checklist") checklist: RequestBody,
+        @Part("assigneeId") assigneeId: RequestBody,
+        @Part("startDate") startDate: RequestBody,
+        @Part("endDate") endDate: RequestBody,
         @Part attachments: List<MultipartBody.Part>,
         @Header("Authorization") authorization: String
     ): Response<ApiResponse<Any>>

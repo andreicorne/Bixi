@@ -19,7 +19,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.bixi.AppSession
 import com.example.bixi.R
 import com.example.bixi.adapters.AttachmentListAdapter
@@ -29,14 +31,15 @@ import com.example.bixi.constants.NavigationConstants
 import com.example.bixi.customViews.CustomBottomSheetFragment
 import com.example.bixi.databinding.ActivityTaskDetailsBinding
 import com.example.bixi.enums.AttachmentBottomSheetItemType
-import com.example.bixi.enums.AttachmentType
 import com.example.bixi.helper.AttachmentConverter
 import com.example.bixi.helper.AttachmentSelectionHelper
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
+import com.example.bixi.helper.Utils
 import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.BottomSheetItem
 import com.example.bixi.models.CheckItem
+import com.example.bixi.models.api.CheckItemResponse
 import com.example.bixi.models.api.CreateTaskRequest
 import com.example.bixi.services.RetrofitClient
 import com.example.bixi.viewModels.TaskDetailsViewModel
@@ -64,6 +67,8 @@ class TaskDetailsActivity : BaseActivity() {
 
     // Sistem centralizat pentru atașamente
     private lateinit var attachmentHelper: AttachmentSelectionHelper
+
+    private lateinit var itemTouchHelper: ItemTouchHelper
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.applyLocale(newBase))
@@ -178,10 +183,20 @@ class TaskDetailsActivity : BaseActivity() {
         showLoading(true)
         lifecycleScope.launch {
             try {
-                val gson = Gson()
-                val checksJson = gson.toJson(viewModel.checks.value)
+                val checkItemResponses: List<CheckItemResponse> = viewModel.checks.value?.map { item ->
+                    CheckItemResponse(
+                        text = item.text,
+                        done = item.done
+                    )
+                } ?: emptyList()
 
-                val createTaskRequest = CreateTaskRequest(viewModel.title.value!!, viewModel.description.value!!, AppSession.user!!.user.id, checksJson, null)
+                val gson = Gson()
+                val checksJson = gson.toJson(checkItemResponses)
+
+                val createTaskRequest = CreateTaskRequest(viewModel.title.value!!, viewModel.description.value!!,
+                    AppSession.user!!.user.id, "98112922-056b-4aa9-834b-f56004b43bc5", checksJson,
+                    Utils.calendarToUtcIsoString(viewModel.startDateTime.value!!),
+                    Utils.calendarToUtcIsoString(viewModel.endDateTime.value!!))
 
                 val parts = prepareAttachments(baseContext, viewModel.attachments.value!!)
                 val response = RetrofitClient.createTask(createTaskRequest, parts)
@@ -323,13 +338,27 @@ class TaskDetailsActivity : BaseActivity() {
         binding.rlCheckList.layoutManager = LinearLayoutManager(this)
 
         viewModel.checks.observe(this) { newList ->
-            adapterChecks.submitList(newList)
+            val sortedList = newList.sortedBy { it.done } // false (nebifat) vine înainte de true (bifat)
+            adapterChecks.submitList(sortedList)
         }
 
-        adapterChecks = CheckListAdapter { position ->
-        }
+        adapterChecks = CheckListAdapter(
+            listener = { item, isChecked ->
+                viewModel.updateCheckItem(item.id!!, isChecked)
+            },
+            deleteListener = { item ->
+                viewModel.deleteCheckItem(item.id!!)
+            },
+            startDragListener = { viewHolder ->
+                itemTouchHelper.startDrag(viewHolder)
+            }
+        )
+
         binding.rlCheckList.adapter = adapterChecks
         binding.rlCheckList.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+
+        itemTouchHelper = ItemTouchHelper(checkItemTouchHelperCallback)
+        itemTouchHelper.attachToRecyclerView(binding.rlCheckList)
     }
 
     private fun initAttachmentList(){
@@ -522,5 +551,58 @@ class TaskDetailsActivity : BaseActivity() {
     fun dpToPx(dp: Float): Float {
         val density = resources.displayMetrics.density
         return dp * density
+    }
+
+    val checkItemTouchHelperCallback = object : ItemTouchHelper.Callback() {
+
+        override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+            val item = adapterChecks.currentList[viewHolder.adapterPosition]
+
+            // Permite glisarea doar dacă itemul nu este bifat
+            val dragFlags = if (item.done) 0 else ItemTouchHelper.UP or ItemTouchHelper.DOWN
+            val swipeFlags = 0
+            return makeMovementFlags(dragFlags, swipeFlags)
+        }
+
+        override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+            super.onSelectedChanged(viewHolder, actionState)
+
+            // Verifică dacă un item este selectat (este apasat pentru glisare)
+            if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                viewHolder?.itemView?.elevation = 8f // Setează elevation pentru a ieși în evidență
+            }
+        }
+
+        // Se apelează după ce itemul a fost eliberat și mutat
+        override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+            super.clearView(recyclerView, viewHolder)
+            viewHolder.itemView.elevation = 0f // Resetează elevation la 0 după mutare
+        }
+
+        override fun onMove(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder,
+            target: RecyclerView.ViewHolder
+        ): Boolean {
+            val item = adapterChecks.currentList[viewHolder.adapterPosition]
+            // Permite mutarea doar pentru itemii nebifați
+            if (item.done) return false
+            val fromPosition = viewHolder.adapterPosition
+            val toPosition = target.adapterPosition
+            viewModel.moveUncheckedItem(fromPosition, toPosition)
+            return true
+        }
+
+        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+            // Nu permite swipe pentru niciun item
+        }
+
+        override fun isLongPressDragEnabled(): Boolean {
+            return true // Permite glisarea lungă
+        }
+
+        override fun isItemViewSwipeEnabled(): Boolean {
+            return false // Dezactivează swipe-ul
+        }
     }
 }

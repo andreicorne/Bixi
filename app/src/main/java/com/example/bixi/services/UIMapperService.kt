@@ -14,9 +14,9 @@ object UIMapperService {
             id = task.id,
             title = task.title,
             description = fromHtmlToPlainText(task.description),
-            assigneeName = task.assigneeName,
-            startDate = LocalDateTime.parse(task.startDate, formatter),
-            endDate = LocalDateTime.parse(task.endDate, formatter)
+            assigneeName = task.assigneeName ?: "N/A",
+            startDate = task.startDate?.let { LocalDateTime.parse(it, formatter) } ?: LocalDateTime.MIN,
+            endDate = task.endDate?.let { LocalDateTime.parse(it, formatter) } ?: LocalDateTime.MIN
         )
     }
 

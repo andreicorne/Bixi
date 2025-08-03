@@ -203,7 +203,7 @@ class BulbSurfaceView(context: Context, attrs: AttributeSet?) : SurfaceView(cont
 //        canvas.drawColor(if(isLampOn) Color.argb(255, 92, 40, 0) else Color.BLACK)
 
         if(isLampOn){
-            canvas.drawBitmap(backgroundBitmap, (-(width / 2)).toFloat(), 0f, null)
+//            canvas.drawBitmap(backgroundBitmap, (-(width / 2)).toFloat(), 0f, null)
         }
 
         drawText(canvas)

@@ -13,7 +13,7 @@ data class TaskDetailsResponse(
     val isTemplate: Boolean,
     val description: String,
     val status: String,
-    val checklist: List<CheckItem>,
+    val checklist: List<CheckItemResponse>,
     val startDate: String,
     val endDate: String,
     val linkedEntityId: String?,

@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.bixi.AppSession
 import com.example.bixi.enums.AttachmentType
 import com.example.bixi.enums.TaskStatus
+import com.example.bixi.helper.Utils
 import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.CheckItem
 import com.example.bixi.models.api.AttachmentResponse
@@ -22,6 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
+import java.util.UUID
 
 class TaskDetailsViewModel : BaseViewModel() {
 
@@ -67,14 +69,17 @@ class TaskDetailsViewModel : BaseViewModel() {
                 val response = RetrofitClient.getTaskById(taskId)
                 if (response.success) {
                     val task = response.data!!
-                    _title.value = task.title
 
+                    _title.value = task.title
                     _description.value = UIMapperService.fromHtmlToPlainText(task.description)
 
                     setEndDateTimeFromServer(task.endDate)
                     setStartDateTimeFromServer(task.startDate)
 
-                    _checks.value = task.checklist
+                    val isMoreThanOneChecks = task.checklist.size > 1
+                    _checks.value = task.checklist.map { item ->
+                        CheckItem(text = item.text, done = item.done, id = UUID.randomUUID().toString(), shouldDisplayDragHandle = isMoreThanOneChecks)
+                    }
 
                     _attachments.value = mapAttachmentsFromServer(task.attachments)
 
@@ -274,11 +279,6 @@ class TaskDetailsViewModel : BaseViewModel() {
         return list.count { it.uri != null }
     }
 
-    // Metodele pentru CheckItems rămân neschimbate
-    fun addCheckItem(item: CheckItem) {
-        _checks.value = _checks.value?.plus(item)
-    }
-
     fun removeCheckAt(index: Int) {
         val updatedList = _checks.value?.toMutableList() ?: return
         if (index in updatedList.indices) {
@@ -287,23 +287,72 @@ class TaskDetailsViewModel : BaseViewModel() {
         }
     }
 
+    // Funcție pentru a actualiza "shouldDisplayDragHandle" pe toți itemii
+    private fun updateDragHandles(items: List<CheckItem>): List<CheckItem> {
+        val shouldShowDrag = items.count { !it.done } >= 2
+        return items.map { item ->
+            item.copy(shouldDisplayDragHandle = shouldShowDrag && !item.done)
+        }
+    }
+
+    fun addCheckItem(newItem: CheckItem) {
+        val currentList = _checks.value ?: emptyList()
+
+        // Adăugăm noul item, care va avea drag handle doar dacă este permis
+        val updatedList = (currentList + newItem).let { updateDragHandles(it) }
+
+        _checks.value = updatedList
+    }
+
+    fun deleteCheckItem(id: String) {
+        val currentList = _checks.value ?: return
+
+        val updatedList = currentList.filter { it.id != id }
+
+        // Actualizăm drag handles pe toți itemii
+        val finalList = updateDragHandles(updatedList)
+
+        _checks.value = finalList
+    }
+
+    fun moveUncheckedItem(from: Int, to: Int) {
+        val currentList = _checks.value?.toMutableList() ?: return
+
+        // doar pe cele nebifate
+        val unchecked = currentList.filter { !it.done }.toMutableList()
+        if (from >= unchecked.size || to >= unchecked.size) return
+
+        val movedItem = unchecked.removeAt(from)
+        unchecked.add(to, movedItem)
+
+        // Actualizăm drag handles pe toate itemele (și cele bifate)
+        val finalList = updateDragHandles(unchecked + currentList.filter { it.done })
+
+        _checks.value = finalList
+    }
+
+    fun updateCheckItem(id: String, isChecked: Boolean) {
+        val currentList = _checks.value?.toMutableList() ?: return
+        val index = currentList.indexOfFirst { it.id == id }
+        if (index != -1) {
+            // actualizăm itemul bifat
+            val updatedItem = currentList[index].copy(done = isChecked)
+            currentList[index] = updatedItem
+
+            // Actualizăm drag handles pe toți itemii
+            val finalList = updateDragHandles(currentList)
+
+            _checks.value = finalList
+        }
+    }
+
     fun setEndDateTimeFromServer(dateStr: String) {
-        val calendar = parseIsoToCalendar(dateStr)
+        val calendar = Utils.utcIsoStringToCalendar(dateStr)
         _endDateTime.value = calendar
     }
 
     fun setStartDateTimeFromServer(dateStr: String) {
-        val calendar = parseIsoToCalendar(dateStr)
+        val calendar = Utils.utcIsoStringToCalendar(dateStr)
         _startDateTime.value = calendar
-    }
-
-    fun parseIsoToCalendar(isoDate: String): Calendar {
-        val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-        format.timeZone = TimeZone.getTimeZone("UTC")
-        val date = format.parse(isoDate)
-
-        return Calendar.getInstance().apply {
-            time = date!!
-        }
     }
 }

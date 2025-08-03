@@ -159,13 +159,16 @@ object RetrofitClient {
 
         val mediaType = "text/plain".toMediaTypeOrNull()
         val titleBody = parameter.title.toRequestBody(mediaType)
+        val assigneeBody = parameter.assigneeId.toRequestBody(mediaType)
+        val startDateBody = parameter.startDate.toRequestBody(mediaType)
+        val endDateBody = parameter.endDate.toRequestBody(mediaType)
         val descriptionBody = parameter.description.toRequestBody(mediaType)
         val creatorIdBody = parameter.creatorId.toRequestBody(mediaType)
         val checkListBody = parameter.checklist.toRequestBody(mediaType)
 
         val bearerToken = "Bearer $validToken"
         return handleApiCall { instance.createTask(titleBody, descriptionBody, creatorIdBody,
-            checkListBody, attachments, bearerToken) }
+            checkListBody, assigneeBody, startDateBody, endDateBody, attachments, bearerToken) }
     }
 
     suspend fun forgotPassword(parameter: ForgotPasswordRequest): ApiResponse<Any> {
