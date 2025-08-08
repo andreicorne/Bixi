@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.Priority
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.bixi.R
 import com.example.bixi.helper.BackgroundStylerService
@@ -68,12 +69,16 @@ class MessageAttachmentAdapter(
                     .transform(RoundedCorners(12))
                     .placeholder(R.drawable.ic_image)
                     .error(R.drawable.ic_image)
+                    .override(200)
+                    .priority(Priority.HIGH)
                     .into(imageView)
             } catch (e: Exception) {
                 Glide.with(itemView.context)
                     .load(attachment.url)
                     .transform(RoundedCorners(12))
                     .placeholder(R.drawable.ic_image)
+                    .override(200)
+                    .priority(Priority.HIGH)
                     .error(R.drawable.ic_image)
                     .into(imageView)
             }

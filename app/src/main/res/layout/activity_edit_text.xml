@@ -1,0 +1,39 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:transitionName="task_details_description_edittext_transition"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:background="#30000000"
+    android:clickable="true"
+    android:focusable="true"
+    android:layout_gravity="center_vertical">
+
+    <com.example.bixi.customViews.ValidatedTextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.FilledBox"
+        android:id="@+id/tl_description"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="80dp"
+        android:layout_marginBottom="80dp"
+        android:hint="@string/details"
+        app:boxCornerRadiusTopEnd="10dp"
+        app:boxCornerRadiusBottomStart="10dp"
+        app:boxCornerRadiusBottomEnd="10dp"
+        app:boxCornerRadiusTopStart="10dp"
+        app:boxStrokeWidth="0dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etDescription"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:inputType="textMultiLine"
+            android:minLines="4"
+            android:gravity="top|start"
+            android:overScrollMode="always"
+            android:scrollbars="vertical" />
+    </com.example.bixi.customViews.ValidatedTextInputLayout>
+</LinearLayout>

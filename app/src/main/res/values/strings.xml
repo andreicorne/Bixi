@@ -81,5 +81,15 @@
     <string name="view">View</string>
     <string name="error">Error</string>
 
-    <string name="attachment_image">attachment_image</string>
+    <string name="unknown_file_type">Unknown file type</string>
+    <string name="couldnt_load_file">Couldn\'t load file</string>
+    <string name="couldnt_load_image">Couldn\'t load image</string>
+    <string name="couldnt_load_document">Couldn\'t load document</string>
+    <string name="document_not_found">Document not found</string>
+    <string name="no_application_found_to_open_file">No application was found to open this file</string>
+    <string name="permissions_required_for_attachments">Permissions are required for attachments</string>
+    <string name="camera_permission_required">Camera permission is required</string>
+    <string name="couldnt_take_photo">I couldn\'t open the camera to take the picture</string>
+    <string name="storage_permission_required">Storage permission is required</string>
+
 </resources>

@@ -14,9 +14,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" /> <!-- Optional: Write permission if you need to save files -->
-
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
-
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
@@ -31,6 +29,10 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:targetApi="31">
+        <activity
+            android:name=".activities.EditTextActivity"
+            android:theme="@style/TranslucentTheme"
+            android:exported="false" />
         <activity
             android:name=".activities.AttachmentViewerActivity"
             android:exported="false" />

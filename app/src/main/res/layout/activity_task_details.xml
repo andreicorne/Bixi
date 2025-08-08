@@ -91,7 +91,8 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:paddingBottom="80dp">
 
             <com.google.android.material.textview.MaterialTextView
                 style="@style/TextAppearance.Material3.BodyMedium"
@@ -106,7 +107,7 @@
 
             <com.example.bixi.customViews.ValidatedTextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.FilledBox"
-                android:id="@+id/titleLayout"
+                android:id="@+id/tl_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/tv_details"
@@ -128,13 +129,13 @@
 
             <com.example.bixi.customViews.ValidatedTextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.FilledBox"
-                android:id="@+id/descriptionInputLayout"
+                android:id="@+id/tl_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="20dp"
                 android:layout_marginRight="20dp"
                 android:layout_marginTop="12dp"
-                android:layout_below="@+id/titleLayout"
+                android:layout_below="@+id/tl_title"
                 android:hint="@string/details"
                 app:boxCornerRadiusTopEnd="10dp"
                 app:boxCornerRadiusBottomStart="10dp"
@@ -142,14 +143,30 @@
                 app:boxCornerRadiusTopStart="10dp"
                 app:boxStrokeWidth="0dp">
 
+<!--                <com.google.android.material.textfield.TextInputEditText-->
+<!--                    android:id="@+id/etDescription"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:inputType="none"-->
+<!--                    android:minLines="4"-->
+<!--                    android:maxLines="6"-->
+<!--                    android:cursorVisible="false"-->
+<!--                    android:importantForAccessibility="no"-->
+<!--                    android:focusable="false"-->
+<!--                    android:transitionName="task_details_description_edittext_transition"-->
+<!--                    android:clickable="true"-->
+<!--                    android:ellipsize="end"-->
+<!--                    android:gravity="top|start"-->
+<!--                    android:scrollbars="vertical" />-->
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etDescription"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textMultiLine"
                     android:minLines="4"
-                    android:maxLines="6"
                     android:gravity="top|start"
+                    android:overScrollMode="always"
                     android:scrollbars="vertical" />
             </com.example.bixi.customViews.ValidatedTextInputLayout>
 
@@ -161,7 +178,7 @@
                 android:layout_marginTop="12dp"
                 android:layout_marginStart="20dp"
                 android:layout_marginEnd="20dp"
-                android:layout_below="@+id/descriptionInputLayout"
+                android:layout_below="@+id/tl_description"
                 android:hint="@string/select_employee"
                 app:boxCornerRadiusTopEnd="10dp"
                 app:boxCornerRadiusBottomStart="10dp"

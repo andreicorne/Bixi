@@ -82,5 +82,14 @@
     <string name="view">Vizualizează</string>
     <string name="error">Eroare</string>
 
-    <string name="attachment_image">attachment_image</string>
+    <string name="unknown_file_type">Tip de fișier necunoscut</string>
+    <string name="couldnt_load_file">Nu s-a putut încărca fișierul</string>
+    <string name="couldnt_load_image">Nu s-a putut încărca imaginea</string>
+    <string name="couldnt_load_document">Nu s-a putut încărca documentul</string>
+    <string name="document_not_found">Documentul nu a putut fi găsit</string>
+    <string name="no_application_found_to_open_file">Nu s-a găsit o aplicație pentru a deschide acest fișier</string>
+    <string name="permissions_required_for_attachments">Sunt necesare permisiuni pentru atașamente</string>
+    <string name="camera_permission_required">Este necesară permisiunea pentru cameră</string>
+    <string name="couldnt_take_photo">Nu am putut deschide camera pentru a face poza</string>
+    <string name="storage_permission_required">Este necesară permisiunea pentru stocare</string>
 </resources>

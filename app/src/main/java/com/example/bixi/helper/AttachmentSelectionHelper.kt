@@ -1,7 +1,5 @@
 package com.example.bixi.helper
 
-import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -9,7 +7,6 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -69,7 +66,7 @@ class AttachmentSelectionHelper(
         }
 
         if (!cameraPermission && !storagePermission) {
-            Toast.makeText(activity, "Permissions are required for attachments", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.permissions_required_for_attachments), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -109,7 +106,7 @@ class AttachmentSelectionHelper(
     private fun openCamera() {
         if (ContextCompat.checkSelfPermission(activity, android.Manifest.permission.CAMERA)
             != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(activity, "Camera permission is required", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -130,7 +127,7 @@ class AttachmentSelectionHelper(
             )
             cameraLauncher.launch(photoURI)
         } catch (e: IllegalArgumentException) {
-            Toast.makeText(activity, "Error creating photo URI: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.couldnt_take_photo), Toast.LENGTH_SHORT).show()
             android.util.Log.e("AttachmentHelper", "FileProvider error", e)
         }
     }
@@ -143,7 +140,7 @@ class AttachmentSelectionHelper(
         }
 
         if (!hasPermission) {
-            Toast.makeText(activity, "Storage permission is required", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.storage_permission_required), Toast.LENGTH_SHORT).show()
             return
         }
 

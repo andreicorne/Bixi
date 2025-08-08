@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.bixi.interfaces.AuthApi
 import com.example.bixi.models.api.ApiResponse
 import com.example.bixi.models.api.CreateTaskRequest
+import com.example.bixi.models.api.EditTaskRequest
 import com.example.bixi.models.api.ForgotPasswordRequest
 import com.example.bixi.models.api.GetTasksRequest
 import com.example.bixi.models.api.LoginRequest
@@ -169,6 +170,28 @@ object RetrofitClient {
         val bearerToken = "Bearer $validToken"
         return handleApiCall { instance.createTask(titleBody, descriptionBody, creatorIdBody,
             checkListBody, assigneeBody, startDateBody, endDateBody, attachments, bearerToken) }
+    }
+
+    suspend fun editTask(parameter: EditTaskRequest, attachments: List<MultipartBody.Part>): ApiResponse<Any> {
+        // Verifică și refresh token dacă este necesar
+        val validToken = ensureValidToken()
+
+        if (validToken == null) {
+            // Token invalid sau refresh a eșuat
+            return ApiResponse(false, -1, null)
+        }
+
+        val mediaType = "text/plain".toMediaTypeOrNull()
+        val titleBody = parameter.title.toRequestBody(mediaType)
+//        val assigneeBody = parameter.assigneeId.toRequestBody(mediaType)
+//        val startDateBody = parameter.startDate.toRequestBody(mediaType)
+//        val endDateBody = parameter.endDate.toRequestBody(mediaType)
+        val descriptionBody = parameter.description.toRequestBody(mediaType)
+        val checkListBody = parameter.checklist.toRequestBody(mediaType)
+
+        val bearerToken = "Bearer $validToken"
+        return handleApiCall { instance.editTask(parameter.id,titleBody, descriptionBody, checkListBody,
+            attachments, bearerToken) }
     }
 
     suspend fun forgotPassword(parameter: ForgotPasswordRequest): ApiResponse<Any> {

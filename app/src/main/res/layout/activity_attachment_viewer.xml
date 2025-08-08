@@ -15,7 +15,10 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         android:background="@color/md_theme_surface"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -97,12 +100,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="matrix"
-            android:background="@color/md_theme_background"
-            android:contentDescription="@string/attachment_image" />
+            android:background="@color/md_theme_background" />
 
     </FrameLayout>
 
-    <!-- Container pentru documente -->
     <FrameLayout
         android:id="@+id/document_container"
         android:layout_width="match_parent"
@@ -129,7 +130,6 @@
 
     </FrameLayout>
 
-    <!-- Container pentru erori -->
     <LinearLayout
         android:id="@+id/error_container"
         android:layout_width="match_parent"
@@ -154,7 +154,7 @@
             android:id="@+id/tv_error"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nu s-a putut încărca fișierul"
+            android:text="@string/couldnt_load_file"
             android:textSize="16sp"
             android:textColor="@color/md_theme_onSurfaceVariant"
             android:textAlignment="center"

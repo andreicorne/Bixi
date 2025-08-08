@@ -4,28 +4,22 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bixi.AppSession
 import com.example.bixi.enums.AttachmentType
-import com.example.bixi.enums.TaskStatus
 import com.example.bixi.helper.Utils
 import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.CheckItem
+import com.example.bixi.models.TaskUIData
 import com.example.bixi.models.api.AttachmentResponse
-import com.example.bixi.models.api.CreateTaskRequest
-import com.example.bixi.models.api.GetTasksRequest
 import com.example.bixi.services.RetrofitClient
 import com.example.bixi.services.UIMapperService
-import com.google.gson.Gson
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
-import java.util.TimeZone
 import java.util.UUID
 
 class TaskDetailsViewModel : BaseViewModel() {
+
+    private var originalData: TaskUIData? = null
 
     var isCreateMode: Boolean = false
     var taskId: String = ""
@@ -48,20 +42,17 @@ class TaskDetailsViewModel : BaseViewModel() {
     private val _attachments = MutableLiveData<List<AttachmentItem>>(mutableListOf(AttachmentItem()))
     val attachments: LiveData<List<AttachmentItem>> = _attachments
 
-    private val _responsible = MutableLiveData<List<String>>(mutableListOf())
-    val responsible: LiveData<List<String>> = _responsible
+    private val _responsibles = MutableLiveData<List<String>>(mutableListOf())
+    val responsibles: LiveData<List<String>> = _responsibles
+
+    private val _responsible = MutableLiveData<String>()
+    val responsible: LiveData<String> = _responsible
 
     private val _checks = MutableLiveData<List<CheckItem>>(emptyList())
     val checks: LiveData<List<CheckItem>> = _checks
 
-    private val _startDate = MutableLiveData<String>()
-    val startDate: LiveData<String> = _startDate
-
-    private val _endDate = MutableLiveData<String>()
-    val endDate: LiveData<String> = _endDate
-
     fun getData(){
-        _responsible.value = listOf("Marius", "Cosmin", "Flavius")
+        _responsibles.value = listOf("Marius", "Cosmin", "Flavius")
 
         setLoading(true)
         viewModelScope.launch {
@@ -73,6 +64,9 @@ class TaskDetailsViewModel : BaseViewModel() {
                     _title.value = task.title
                     _description.value = UIMapperService.fromHtmlToPlainText(task.description)
 
+                    //TODO: reset. need from server
+                    _responsible.value = "Andrei"
+
                     setEndDateTimeFromServer(task.endDate)
                     setStartDateTimeFromServer(task.startDate)
 
@@ -82,6 +76,9 @@ class TaskDetailsViewModel : BaseViewModel() {
                     }
 
                     _attachments.value = mapAttachmentsFromServer(task.attachments)
+
+                    originalData = TaskUIData(title.value!!, description.value!!, startDateTime.value!!, endDateTime.value!!,
+                        attachments.value!!, responsible.value, checks.value!!)
 
                     _serverStatusResponse.postValue(true)
                 } else {
@@ -93,6 +90,49 @@ class TaskDetailsViewModel : BaseViewModel() {
                 _serverStatusResponse.postValue(false)
             }
         }
+    }
+
+    fun taskHasChanged(): Boolean{
+        if(originalData == null){
+            return false
+        }
+
+        if(!title.value.equals(originalData!!.title)){
+            return true
+        }
+        if(!description.value.equals(originalData!!.description)){
+            return true
+        }
+        if(!responsible.value.equals(originalData!!.responsible)){
+            return true
+        }
+        if(startDateTime.value!!.timeInMillis != originalData!!.startDate.timeInMillis){
+            return true
+        }
+        if(endDateTime.value!!.timeInMillis != originalData!!.endDate.timeInMillis){
+            return true
+        }
+        if(checks.value != originalData!!.checks){
+            return true
+        }
+        if(attachments.value != originalData!!.attachments){
+            return true
+        }
+        return false
+    }
+
+    fun resetChanges(){
+        _title.value = originalData!!.title
+        _description.value = originalData!!.description
+        _responsible.value = if(originalData!!.responsible.isNullOrBlank()) "" else originalData!!.responsible!!
+
+        _startDateTime.value = originalData!!.startDate
+        _endDateTime.value = originalData!!.endDate
+
+        _checks.value = originalData!!.checks
+        _attachments.value = originalData!!.attachments
+
+        // TODO: set the original responsible
     }
 
     private fun mapAttachmentsFromServer(serverAttachments: List<AttachmentResponse>): List<AttachmentItem> {
@@ -110,7 +150,8 @@ class TaskDetailsViewModel : BaseViewModel() {
             AttachmentItem(
                 uri = uri,
                 type = attachmentType,
-                serverData = serverAttachment
+                serverData = serverAttachment,
+                false
             )
         }.toMutableList()
 
@@ -134,6 +175,10 @@ class TaskDetailsViewModel : BaseViewModel() {
 
     fun setEndDateTime(calendar: Calendar) {
         _endDateTime.value = calendar
+    }
+
+    fun setResponsible(name: String){
+        _responsible.value = name
     }
 
     /**

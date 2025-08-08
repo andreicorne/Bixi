@@ -19,6 +19,7 @@ import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
@@ -49,6 +50,22 @@ interface AuthApi {
         @Part attachments: List<MultipartBody.Part>,
         @Header("Authorization") authorization: String
     ): Response<ApiResponse<Any>>
+
+    @Multipart
+    @PATCH("hr/mobile-tasks/{taskId}/with-files")
+    suspend fun editTask(
+        @Path("taskId") taskId: String,
+        @Part("title") title: RequestBody,
+        @Part("description") description: RequestBody,
+//        @Part("creatorId") creatorId: RequestBody,
+        @Part("checklist") checklist: RequestBody,
+//        @Part("assigneeId") assigneeId: RequestBody,
+//        @Part("startDate") startDate: RequestBody,
+//        @Part("endDate") endDate: RequestBody,
+        @Part attachments: List<MultipartBody.Part>,
+        @Header("Authorization") authorization: String
+    ): Response<ApiResponse<Any>>
+
 
     @POST("auth/mobile-forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ApiResponse<Any>>

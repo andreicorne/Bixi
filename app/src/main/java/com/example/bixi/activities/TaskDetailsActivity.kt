@@ -15,8 +15,11 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -28,19 +31,18 @@ import com.example.bixi.adapters.AttachmentListAdapter
 import com.example.bixi.adapters.CheckListAdapter
 import com.example.bixi.constants.AppConstants
 import com.example.bixi.constants.NavigationConstants
-import com.example.bixi.customViews.CustomBottomSheetFragment
 import com.example.bixi.databinding.ActivityTaskDetailsBinding
-import com.example.bixi.enums.AttachmentBottomSheetItemType
 import com.example.bixi.helper.AttachmentConverter
+import com.example.bixi.helper.AttachmentOpenExternalHelper
 import com.example.bixi.helper.AttachmentSelectionHelper
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.helper.Utils
 import com.example.bixi.models.AttachmentItem
-import com.example.bixi.models.BottomSheetItem
 import com.example.bixi.models.CheckItem
 import com.example.bixi.models.api.CheckItemResponse
 import com.example.bixi.models.api.CreateTaskRequest
+import com.example.bixi.models.api.EditTaskRequest
 import com.example.bixi.services.RetrofitClient
 import com.example.bixi.viewModels.TaskDetailsViewModel
 import com.google.gson.Gson
@@ -58,7 +60,6 @@ class TaskDetailsActivity : BaseActivity() {
     private val viewModel: TaskDetailsViewModel by viewModels()
 
     private lateinit var adapterAttachments: AttachmentListAdapter
-    private var selectedAttachmentPosition: Int = -1
 
     private lateinit var adapterChecks: CheckListAdapter
 
@@ -69,6 +70,15 @@ class TaskDetailsActivity : BaseActivity() {
     private lateinit var attachmentHelper: AttachmentSelectionHelper
 
     private lateinit var itemTouchHelper: ItemTouchHelper
+
+    private val descriptionEditLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val updatedDescription = result.data?.getStringExtra(NavigationConstants.EDITTEXT_TEXT_NAV)
+            binding.etDescription.setText(updatedDescription)
+        }
+    }
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.applyLocale(newBase))
@@ -88,6 +98,10 @@ class TaskDetailsActivity : BaseActivity() {
         }
         else{
             viewModel.taskId = taskId
+        }
+
+        onBackPressedDispatcher.addCallback(this) {
+            onBack()
         }
 
         // Inițializează helper-ul pentru atașamente
@@ -113,16 +127,7 @@ class TaskDetailsActivity : BaseActivity() {
     private fun handleAttachmentsFromHelper(attachments: List<com.example.bixi.models.Attachment>) {
         attachments.forEach { attachment ->
             val attachmentItem = AttachmentConverter.toAttachmentItem(attachment)
-
-            if (selectedAttachmentPosition != -1) {
-                viewModel.updateAttachmentAt(selectedAttachmentPosition) {
-                    attachmentItem
-                }
-                selectedAttachmentPosition = -1
-            } else {
-                // Adaugă atașamentul înaintea ultimului element (care este container-ul gol)
-                viewModel.addAttachmentBeforeLast(attachmentItem)
-            }
+            viewModel.addAttachmentBeforeLast(attachmentItem)
         }
     }
 
@@ -168,15 +173,50 @@ class TaskDetailsActivity : BaseActivity() {
         binding.ivReset.setOnClickListener {
             animateResetFields()
         }
+        binding.ivReset.visibility = View.GONE
 
         binding.ivSetDone.setOnClickListener {
-            createTask()
+            if(viewModel.isCreateMode){
+                createTask()
+            }
+            else{
+                editTask()
+            }
         }
 
         binding.ivChat.setOnClickListener {
             val intent = Intent(this, ChatActivity::class.java)
             startActivity(intent)
         }
+
+        binding.tlTitle.onFocusLostListener = { isValid ->
+            setResetBtnVisibility()
+        }
+        binding.tlDescription.onFocusLostListener = { isValid ->
+            setResetBtnVisibility()
+        }
+
+        // TODO: for open edittext window
+//        binding.etDescription.setOnClickListener {
+//            openDescriptionEdit()
+//        }
+    }
+
+    private fun openDescriptionEdit() {
+        val intent = Intent(this, EditTextActivity::class.java)
+        intent.putExtra(NavigationConstants.EDITTEXT_TEXT_NAV, binding.etDescription.text.toString())
+
+        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+            this,
+            binding.etDescription,
+            "task_details_description_edittext_transition"
+        )
+        descriptionEditLauncher.launch(intent, options)
+    }
+
+    private fun setResetBtnVisibility(){
+        val hasChanges = viewModel.taskHasChanged()
+        binding.ivReset.visibility = if(hasChanges) View.VISIBLE else View.GONE
     }
 
     private fun createTask() {
@@ -200,6 +240,38 @@ class TaskDetailsActivity : BaseActivity() {
 
                 val parts = prepareAttachments(baseContext, viewModel.attachments.value!!)
                 val response = RetrofitClient.createTask(createTaskRequest, parts)
+                if (response.success) {
+                    onSuccessfullyCreated()
+                } else {
+                }
+                showLoading(false)
+
+            } catch (e: Exception) {
+                showLoading(false)
+                Log.e("API", "Exception: ${e.message}")
+            }
+        }
+    }
+
+    private fun editTask() {
+        showLoading(true)
+        lifecycleScope.launch {
+            try {
+                val checkItemResponses: List<CheckItemResponse> = viewModel.checks.value?.map { item ->
+                    CheckItemResponse(
+                        text = item.text,
+                        done = item.done
+                    )
+                } ?: emptyList()
+
+                val gson = Gson()
+                val checksJson = gson.toJson(checkItemResponses)
+
+                val editTaskRequest = EditTaskRequest(viewModel.taskId,viewModel.title.value!!, viewModel.description.value!!,
+                    checksJson,)
+
+                val parts = prepareAttachments(baseContext, viewModel.attachments.value!!)
+                val response = RetrofitClient.editTask(editTaskRequest, parts)
                 if (response.success) {
                     onSuccessfullyCreated()
                 } else {
@@ -340,6 +412,7 @@ class TaskDetailsActivity : BaseActivity() {
         viewModel.checks.observe(this) { newList ->
             val sortedList = newList.sortedBy { it.done } // false (nebifat) vine înainte de true (bifat)
             adapterChecks.submitList(sortedList)
+            setResetBtnVisibility()
         }
 
         adapterChecks = CheckListAdapter(
@@ -362,54 +435,55 @@ class TaskDetailsActivity : BaseActivity() {
     }
 
     private fun initAttachmentList(){
+
+        adapterAttachments = AttachmentListAdapter(
+            openAttachmentListener = { position ->
+                openAttachment(position)
+            },
+            removeListener = { position ->
+                onDeleteAttachment(position)
+            }
+        )
+
         viewModel.attachments.observe(this) { newList ->
             adapterAttachments.submitList(newList)
+            setResetBtnVisibility()
         }
 
-        adapterAttachments = AttachmentListAdapter { position ->
-            val attachment = viewModel.attachments.value?.get(position)
-
-            if (attachment?.uri == null) {
-                // Pentru empty container, deschide selecția de atașamente
-                selectedAttachmentPosition = position
-                attachmentHelper.showAttachmentPicker()
-            } else {
-                // Pentru attachments existente, afișează bottom sheet pentru opțiuni
-                runOnUiThread{
-                    val bottomSheetItems = mutableListOf(
-                        BottomSheetItem(getString(R.string.view), AttachmentBottomSheetItemType.VIEW),
-                        BottomSheetItem(getString(R.string.edit), AttachmentBottomSheetItemType.EDIT),
-                        BottomSheetItem(getString(R.string.remove), AttachmentBottomSheetItemType.REMOVE)
-                    )
-                    val bottomSheetFragment = CustomBottomSheetFragment()
-                    bottomSheetFragment.setOptions(bottomSheetItems) { selectedOption ->
-                        when (selectedOption.type) {
-                            AttachmentBottomSheetItemType.VIEW -> {
-                                val fileName = attachment.serverData?.name ?: "Document"
-                                AttachmentViewerActivity.startActivity(
-                                    context = this@TaskDetailsActivity,
-                                    uri = attachment.uri,
-                                    type = attachment.type,
-                                    serverData = attachment.serverData,
-                                    name = fileName
-                                )
-                            }
-                            AttachmentBottomSheetItemType.EDIT -> {
-                                selectedAttachmentPosition = position
-                                attachmentHelper.showAttachmentPicker()
-                            }
-                            AttachmentBottomSheetItemType.REMOVE -> {
-                                viewModel.removeAttachmentAt(position)
-                            }
-                            null -> TODO()
-                        }
-                    }
-                    bottomSheetFragment.show(supportFragmentManager, bottomSheetFragment.tag)
-                }
-            }
-        }
         binding.rlAttachments.adapter = adapterAttachments
         binding.rlAttachments.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+    }
+
+    private fun openAttachment(pos: Int){
+        val attachment = viewModel.attachments.value!![pos]
+        if (attachment.uri != null) {
+
+            if(attachment.isFromStorage){
+                AttachmentOpenExternalHelper.open(this, attachment)
+            }
+            else{
+                val fileName = attachment.serverData?.name ?: getFileName(attachment.uri!!)
+                val intent = Intent(this, AttachmentViewerActivity::class.java).apply {
+                    putExtra(NavigationConstants.ATTACHMENT_URI, attachment.uri.toString())
+                    putExtra(NavigationConstants.ATTACHMENT_TYPE, attachment.type.name)
+                    putExtra(NavigationConstants.ATTACHMENT_NAME, fileName)
+                    if (attachment.serverData != null) {
+                        putExtra(NavigationConstants.ATTACHMENT_SERVER_DATA, attachment.serverData)
+                    }
+                }
+                startActivity(intent)
+            }
+        } else {
+            onAddAttachment()
+        }
+    }
+
+    private fun onDeleteAttachment(position: Int){
+        viewModel.removeAttachmentAt(position)
+    }
+
+    private fun onAddAttachment(){
+        attachmentHelper.showAttachmentPicker()
     }
 
     private fun initToolbar(){
@@ -421,46 +495,39 @@ class TaskDetailsActivity : BaseActivity() {
     private fun setupViewModel(){
         viewModel.serverStatusResponse.observe(this) { success ->
             if (success) {
-                Toast.makeText(this, "Login reușit!", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, getString(R.string.server_error_generic_message), Toast.LENGTH_SHORT).show()
             }
         }
 
-        viewModel.responsible.observe(this) { list ->
+        viewModel.responsibles.observe(this) { list ->
             val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, list)
             binding.tvResponsible.setAdapter(adapter)
         }
 
         viewModel.title.observe(this) { newText ->
-            if (binding.titleLayout.editText?.text.toString() != newText) {
-                binding.titleLayout.editText?.setText(newText)
+            if (binding.tlTitle.editText?.text.toString() != newText) {
+                binding.tlTitle.editText?.setText(newText)
             }
         }
 
         viewModel.description.observe(this) { newText ->
-            if (binding.descriptionInputLayout.editText?.text.toString() != newText) {
-                binding.descriptionInputLayout.editText?.setText(newText)
+            if (binding.tlDescription.editText?.text.toString() != newText) {
+                binding.tlDescription.editText?.setText(newText)
             }
-        }
-
-        viewModel.startDate.observe(this) { startDate ->
-            binding.etStartDate.setText(startDate.toString())
-        }
-
-        viewModel.endDate.observe(this) { endDate ->
-            binding.etEndDate.setText(endDate.toString())
         }
 
         viewModel.startDateTime.observe(this) { date ->
             date?.let {
                 binding.etStartDate.setText(SimpleDateFormat(AppConstants.DATE_FORMAT, Locale.getDefault()).format(it.time))
+                setResetBtnVisibility()
             }
         }
 
         viewModel.endDateTime.observe(this) { date ->
             date?.let {
                 binding.etEndDate.setText(SimpleDateFormat(AppConstants.DATE_FORMAT, Locale.getDefault()).format(it.time))
+                setResetBtnVisibility()
             }
         }
 
@@ -470,17 +537,20 @@ class TaskDetailsActivity : BaseActivity() {
     }
 
     private fun setupBindings(){
-        binding.titleLayout.bindTo(viewModel::setTitle)
-        binding.descriptionInputLayout.bindTo(viewModel::setDescription)
+        binding.tlTitle.bindTo(viewModel::setTitle)
+        binding.tlDescription.bindTo(viewModel::setDescription)
     }
 
     private fun initResponsible(){
         binding.tvResponsible.setOnItemClickListener { _, _, position, _ ->
-            val selected = viewModel.responsible.value.get(position)
+            val selected = viewModel.responsibles.value.get(position)
+            viewModel.setResponsible(selected)
             binding.tvResponsible.clearFocus()
 
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(binding.tvResponsible.windowToken, 0)
+
+            setResetBtnVisibility()
         }
     }
 
@@ -536,6 +606,10 @@ class TaskDetailsActivity : BaseActivity() {
                     .translationY(0f)
                     .alpha(1f)
                     .setDuration(150L)
+                    .withEndAction {
+                        viewModel.resetChanges()
+                        binding.ivReset.visibility = View.GONE
+                    }
                     .start()
             }
             .start()
@@ -543,9 +617,9 @@ class TaskDetailsActivity : BaseActivity() {
 
     private fun onBack(){
         val resultIntent = Intent()
-        resultIntent.putExtra("task_created", taskWasCreated)
+        resultIntent.putExtra(NavigationConstants.TASK_NAVIGATION_BACK, taskWasCreated)
         setResult(Activity.RESULT_OK, resultIntent)
-        onBackPressedDispatcher.onBackPressed()
+        supportFinishAfterTransition()
     }
 
     fun dpToPx(dp: Float): Float {

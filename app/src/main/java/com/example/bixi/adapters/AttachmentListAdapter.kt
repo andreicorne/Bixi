@@ -1,7 +1,6 @@
 package com.example.bixi.adapters
 
 import android.content.Context
-import android.graphics.Color
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.view.LayoutInflater
@@ -19,17 +18,22 @@ import com.example.bixi.enums.AttachmentType
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.models.AttachmentItem
 import androidx.core.graphics.toColorInt
+import com.bumptech.glide.Priority
+import com.example.bixi.helper.ExtensionHelper
 
-class AttachmentListAdapter(private val listener: (position: Int) -> Unit) :
+class AttachmentListAdapter(private val openAttachmentListener: (position: Int) -> Unit,
+                            private val removeListener: (position: Int) -> Unit) :
     ListAdapter<AttachmentItem, AttachmentListAdapter.ViewHolder>(AttachmentDiffCallback()) {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val imageIv: ImageView = itemView.findViewById(R.id.iv_photo)
         private val fileNameView: TextView = itemView.findViewById(R.id.tv_file_name)
+        private val extensionTextView: TextView = itemView.findViewById(R.id.tv_extension)
+        private val extensionView: View = itemView.findViewById(R.id.ll_extension_container)
         private val emptyContainer: View = itemView.findViewById(R.id.rl_empty_container)
         private val documentContainer: View = itemView.findViewById(R.id.rl_document_container)
         private val photoContainer: View = itemView.findViewById(R.id.rl_photo_container)
-        private val editContainer: View = itemView.findViewById(R.id.fl_edit_container)
+        private val removeContainer: View = itemView.findViewById(R.id.iv_remove)
 
         init {
             BackgroundStylerService.setRoundedBackground(
@@ -41,7 +45,7 @@ class AttachmentListAdapter(private val listener: (position: Int) -> Unit) :
             )
 
             BackgroundStylerService.setRoundedBackground(
-                view = editContainer,
+                view = removeContainer,
                 backgroundColor = "#60000000".toColorInt(),
                 cornerRadius = 10f * itemView.context.resources.displayMetrics.density,
             )
@@ -63,6 +67,8 @@ class AttachmentListAdapter(private val listener: (position: Int) -> Unit) :
                 val isImage = when {
                     item.type == AttachmentType.IMAGE -> true
                     item.serverData?.type?.startsWith("image/") == true -> true
+                    item.serverData?.fileUrl?.lowercase()?.matches(Regex(""".*\.(jpg|jpeg|png|gif|webp|bmp)$""")) == true -> true
+
                     else -> {
                         // Fallback: verifică MIME type-ul local pentru URI-uri locale
                         val mimeType = itemView.context.contentResolver.getType(item.uri!!)
@@ -71,7 +77,11 @@ class AttachmentListAdapter(private val listener: (position: Int) -> Unit) :
                 }
 
                 if (isImage) {
-                    Glide.with(itemView.context).load(item.uri).into(imageIv)
+                    Glide.with(itemView.context)
+                        .load(item.uri)
+                        .priority(Priority.HIGH)
+                        .override(200)
+                        .into(imageIv)
                     photoContainer.visibility = View.VISIBLE
                     documentContainer.visibility = View.GONE
                     item.type = AttachmentType.IMAGE
@@ -83,33 +93,34 @@ class AttachmentListAdapter(private val listener: (position: Int) -> Unit) :
                     val fileName = item.serverData?.name ?: getFileName(itemView.context, item.uri!!)
                     fileNameView.text = fileName
                     item.type = AttachmentType.DOCUMENT
+
+                    extensionTextView.text = ExtensionHelper.getExtension(fileName).uppercase()
+                    BackgroundStylerService.setRoundedBackground(
+                        view = extensionView,
+                        backgroundColor = ExtensionHelper.getColorByExtension(fileName),
+                        cornerRadius = 4f * itemView.context.resources.displayMetrics.density,
+                    )
                 }
                 emptyContainer.visibility = View.GONE
-                editContainer.visibility = View.VISIBLE
+                removeContainer.visibility = View.VISIBLE
             } else {
                 emptyContainer.visibility = View.VISIBLE
                 documentContainer.visibility = View.GONE
                 photoContainer.visibility = View.GONE
-                editContainer.visibility = View.GONE
+                removeContainer.visibility = View.GONE
             }
 
             itemView.setOnClickListener {
                 val pos = adapterPosition
                 if (pos != RecyclerView.NO_POSITION) {
-                    // Dacă nu este empty container, deschide viewer-ul
-                    if (item.uri != null) {
-                        val fileName = item.serverData?.name ?: getFileName(itemView.context, item.uri!!)
-                        com.example.bixi.activities.AttachmentViewerActivity.startActivity(
-                            context = itemView.context,
-                            uri = item.uri,
-                            type = item.type,
-                            serverData = item.serverData,
-                            name = fileName
-                        )
-                    } else {
-                        // Pentru empty container, apelează listener-ul original
-                        listener(pos)
-                    }
+                    openAttachmentListener(pos)
+                }
+            }
+
+            removeContainer.setOnClickListener {
+                val pos = adapterPosition
+                if (pos != RecyclerView.NO_POSITION){
+                    removeListener(pos)
                 }
             }
         }

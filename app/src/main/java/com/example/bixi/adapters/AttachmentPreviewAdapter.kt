@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.Priority
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.bixi.R
 import com.example.bixi.models.Attachment
@@ -67,6 +68,8 @@ class AttachmentPreviewAdapter(
                     .load(uri)
                     .transform(RoundedCorners(12))
                     .placeholder(R.drawable.ic_image)
+                    .priority(Priority.HIGH)
+                    .override(200)
                     .error(R.drawable.ic_image)
                     .into(ivPreview)
             } catch (e: Exception) {
@@ -74,6 +77,8 @@ class AttachmentPreviewAdapter(
                     .load(attachment.url)
                     .transform(RoundedCorners(12))
                     .placeholder(R.drawable.ic_image)
+                    .priority(Priority.HIGH)
+                    .override(200)
                     .error(R.drawable.ic_image)
                     .into(ivPreview)
             }

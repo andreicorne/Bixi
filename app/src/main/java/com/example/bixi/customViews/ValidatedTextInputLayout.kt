@@ -14,13 +14,16 @@ class ValidatedTextInputLayout @JvmOverloads constructor(
 
     data class Validator(val regex: Regex, val errorMessage: String)
 
+    var onFocusLostListener: ((Boolean) -> Unit)? = null
+
     private val validators = mutableListOf<Validator>()
 
     init {
         post {
             editText?.onFocusChangeListener = OnFocusChangeListener { _, hasFocus ->
                 if (!hasFocus) {
-                    validate()
+                    val isValid = validate()
+                    onFocusLostListener?.invoke(isValid)
                 }
             }
         }

@@ -8,7 +8,8 @@ import java.util.UUID
 data class AttachmentItem(
     var uri: Uri? = null,
     var type: AttachmentType = AttachmentType.UNKNOWN,
-    var serverData: AttachmentResponse? = null
+    var serverData: AttachmentResponse? = null,
+    var isFromStorage: Boolean = true
 ){
     val id: UUID = UUID.randomUUID()
 }

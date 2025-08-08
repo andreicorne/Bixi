@@ -96,7 +96,7 @@ class TasksFragment : Fragment() {
     private fun setupResultLauncher(){
         taskResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                val taskCreated = result.data?.getBooleanExtra("task_created", false) ?: false
+                val taskCreated = result.data?.getBooleanExtra(NavigationConstants.TASK_NAVIGATION_BACK, false) ?: false
                 if (taskCreated) {
                     Toast.makeText(requireContext(), getString(R.string.successfully_created), Toast.LENGTH_SHORT).show()
 //                    viewModel.setStatus(TaskStatus.NEW)
@@ -176,11 +176,7 @@ class TasksFragment : Fragment() {
             R.drawable.empty_task_15,
             R.drawable.empty_task_15,
             R.drawable.empty_task_14,
-            R.drawable.empty_task_13,
-//            R.drawable.empty_task_16,
-//            R.drawable.empty_task_15,
-//            R.drawable.empty_task_14,
-//            R.drawable.empty_task_13,
+            R.drawable.empty_task_13
             )
 
         binding.ivEmpty.addFrames(frameResources)
