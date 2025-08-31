@@ -1,7 +1,10 @@
 package com.example.bixi.interfaces
 
 import com.example.bixi.models.api.ApiResponse
+import com.example.bixi.models.api.AttendanceRequest
+import com.example.bixi.models.api.CommentResponse
 import com.example.bixi.models.api.CreateTaskRequest
+import com.example.bixi.models.api.EmployeeResponse
 import com.example.bixi.models.api.ForgotPasswordRequest
 import com.example.bixi.models.api.GetTasksRequest
 import com.example.bixi.models.api.LoginRequest
@@ -15,6 +18,7 @@ import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -60,15 +64,22 @@ interface AuthApi {
 //        @Part("creatorId") creatorId: RequestBody,
         @Part("checklist") checklist: RequestBody,
 //        @Part("assigneeId") assigneeId: RequestBody,
-//        @Part("startDate") startDate: RequestBody,
-//        @Part("endDate") endDate: RequestBody,
+        @Part("startDate") startDate: RequestBody,
+        @Part("endDate") endDate: RequestBody,
         @Part attachments: List<MultipartBody.Part>,
         @Header("Authorization") authorization: String
     ): Response<ApiResponse<Any>>
 
+    @DELETE("hr/mobile-tasks/{taskId}")
+    suspend fun delete(@Path("taskId") taskId: String,
+                       @Header("Authorization") authorization: String): Response<ApiResponse<Any>>
 
     @POST("auth/mobile-forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ApiResponse<Any>>
+
+    @POST("hr/attendance/mobile")
+    suspend fun attendance(@Body request: AttendanceRequest,
+                           @Header("Authorization") authorization: String): Response<ApiResponse<Any>>
 
     @GET("hr/mobile-tasks/{taskId}")
     suspend fun getTaskById(
@@ -76,4 +87,15 @@ interface AuthApi {
         @Header("Authorization") authorization: String
     ): Response<ApiResponse<TaskDetailsResponse>>
 
+    @GET("hr/mobile-tasks/employees/list")
+    suspend fun getEmployees(
+        @Header("Authorization") authorization: String
+    ): Response<ApiResponse<List<EmployeeResponse>>>
+
+    @GET("hr/mobile-tasks/{taskId}/comments")
+    suspend fun getComments(
+        @Path("taskId") taskId: String,
+//        @Body request: GetTasksRequest,
+        @Header("Authorization") authorization: String
+    ): Response<ApiResponse<List<CommentResponse>>>
 }

@@ -6,11 +6,12 @@ import androidx.lifecycle.ViewModel
 
 open class BaseViewModel : ViewModel() {
 
-    // LiveData vizibilă pentru Activity/Fragment
+    protected val _sendResponseCode = MutableLiveData<Int>()
+    val sendResponseCode: LiveData<Int> = _sendResponseCode
+
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> get() = _isLoading
 
-    // Metode pe care copilul le poate apela
     protected fun setLoading(value: Boolean) {
         _isLoading.value = value
     }

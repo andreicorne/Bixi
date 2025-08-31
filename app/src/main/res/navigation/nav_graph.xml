@@ -5,16 +5,16 @@
     app:startDestination="@id/tasksFragment">
     <fragment
         android:id="@+id/tasksFragment"
-        android:name="com.example.bixi.fragments.TasksFragment"
+        android:name="com.example.bixi.ui.fragments.TasksFragment"
         android:label="@string/tasks"/>
 
     <fragment
         android:id="@+id/timekeepingFragment"
-        android:name="com.example.bixi.fragments.TimekeepingFragment"
+        android:name="com.example.bixi.ui.fragments.TimekeepingFragment"
         android:label="@string/timekeeper"/>
 
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="com.example.bixi.fragments.SettingsFragment"
+        android:name="com.example.bixi.ui.fragments.SettingsFragment"
         android:label="@string/settings"/>
 </navigation>

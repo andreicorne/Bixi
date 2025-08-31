@@ -1,10 +1,16 @@
-package com.example.bixi.activities
+package com.example.bixi.ui.activities
 
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import com.example.bixi.R
+import com.example.bixi.helper.ResponseStatusHelper
+import com.example.bixi.viewModels.BaseViewModel
 
 abstract class BaseActivity : AppCompatActivity() {
 

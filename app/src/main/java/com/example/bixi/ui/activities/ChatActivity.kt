@@ -1,4 +1,4 @@
-package com.example.bixi.activities
+package com.example.bixi.ui.activities
 
 import android.content.Context
 import android.content.Intent
@@ -10,8 +10,9 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bixi.R
-import com.example.bixi.adapters.AttachmentPreviewAdapter
-import com.example.bixi.adapters.MessageAdapter
+import com.example.bixi.constants.NavigationConstants
+import com.example.bixi.ui.adapters.AttachmentPreviewAdapter
+import com.example.bixi.ui.adapters.MessageAdapter
 import com.example.bixi.databinding.ActivityChatBinding
 import com.example.bixi.helper.AttachmentSelectionHelper
 import com.example.bixi.helper.BackgroundStylerService
@@ -42,6 +43,8 @@ class ChatActivity : BaseActivity() {
         setContentView(binding.root)
         setupLoadingOverlay()
 
+        viewModel.taskId = intent.getStringExtra(NavigationConstants.TASK_ID_NAV).toString()
+
         // Inițializează helper-ul pentru atașamente
         setupAttachmentHelper()
 
@@ -68,6 +71,7 @@ class ChatActivity : BaseActivity() {
         }
 
         viewModel.loadMessages()
+        viewModel.loadMessage()
     }
 
     private fun setupAttachmentPreview() {

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bixi.AppSession
 import com.example.bixi.enums.TaskStatus
+import com.example.bixi.helper.ApiStatus
 import com.example.bixi.models.CheckItem
 import com.example.bixi.models.UITaskList
 import com.example.bixi.models.api.GetTasksRequest
@@ -21,9 +22,6 @@ class TasksViewModel : BaseViewModel() {
 
     private val _selectedStatus = MutableStateFlow(TaskStatus.NEW)
     val selectedStatus: StateFlow<TaskStatus> = _selectedStatus.asStateFlow()
-
-    private val _serverStatusResponse = MutableLiveData<Boolean>()
-    val serverStatusResponse: LiveData<Boolean> = _serverStatusResponse
 
     private val _tasks = MutableLiveData<List<UITaskList>>(emptyList())
     //    private val _checks = MutableLiveData<List<CheckItem>>(mutableListOf(CheckItem(title = "test", isChecked = false)))
@@ -41,14 +39,13 @@ class TasksViewModel : BaseViewModel() {
                 val response = RetrofitClient.getMobileTasks(GetTasksRequest(10, 0, status.value))
                 if (response.success) {
                     _tasks.value = UIMapperService.mapToUiTaskList(response.data!!)
-                    _serverStatusResponse.postValue(true)
-                } else {
-                    _serverStatusResponse.postValue(false)
                 }
+
+                _sendResponseCode.postValue(response.statusCode)
 
             } catch (e: Exception) {
                 Log.e("API", "Exception: ${e.message}")
-                _serverStatusResponse.postValue(false)
+                _sendResponseCode.postValue(ApiStatus.SERVER_ERROR.code)
             }
         }
     }

@@ -5,30 +5,32 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.bixi.models.api.ForgotPasswordRequest
-import com.example.bixi.services.AuthRepository
 import com.example.bixi.services.RetrofitClient
 import kotlinx.coroutines.launch
 
 class ForgotPasswordViewModel() : BaseViewModel() {
 
-    // Poți avea LiveData pentru starea login-ului
-    private val _apiResult = MutableLiveData<Boolean>()
-    val apiResult: LiveData<Boolean> = _apiResult
+    private val _email = MutableLiveData<String>()
+    val email: LiveData<String> = _email
 
-    fun forgotPassword(email: String) {
+    fun setEmail(newTitle: String) {
+        _email.value = newTitle
+    }
+
+    fun forgotPassword() {
         setLoading(true)
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.forgotPassword(ForgotPasswordRequest(email))
+                val response = RetrofitClient.forgotPassword(ForgotPasswordRequest(_email.value!!))
                 if (response.success) {
-                    _apiResult.postValue(true)
+                    _sendResponseCode.postValue(1)
                 } else {
-                    _apiResult.postValue(false)
+                    _sendResponseCode.postValue(1)
                 }
 
             } catch (e: Exception) {
                 Log.e("API", "Exception: ${e.message}")
-                _apiResult.postValue(false)
+                _sendResponseCode.postValue(1)
             }
         }
     }

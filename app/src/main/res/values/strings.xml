@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">Bixi</string>
+
+    <string name="server_error_generic_message">Server error. Try again</string>
+    <string name="server_forgot_password_success">The reset link has been sent. Check your email.</string>
+
     <string name="username">Username</string>
     <string name="timekeeper">Timekeeper</string>
     <string name="tasks">Tasks</string>
@@ -58,9 +62,7 @@
     <string name="forgot_password_message">Enter your email to receive instructions on how to reset your password.</string>
     <string name="send">Send</string>
     <string name="reset_the_password">Reset the password</string>
-
-    <string name="server_error_generic_message">Server error. Try again</string>
-    <string name="server_forgot_password_success">The reset link has been sent. Check your email.</string>
+    <string name="password">Password</string>
 
     <string name="register">Register</string>
     <string name="sign_in">Sign in</string>
@@ -92,4 +94,44 @@
     <string name="couldnt_take_photo">I couldn\'t open the camera to take the picture</string>
     <string name="storage_permission_required">Storage permission is required</string>
 
+    <string name="waiting_for_gps_placeholder">Waiting for GPS...</string>
+    <string name="confirm">Confirm</string>
+
+
+
+    <!-- Strings for LocationDialogFragment with real-time accuracy -->
+
+    <!-- Location search statuses -->
+    <string name="searching_location">Searching for location…</string>
+    <string name="searching_gps_signal">Searching for GPS signal…</string>
+    <string name="searching_location_countdown">Searching for location… %d</string>
+    <string name="improving_accuracy_countdown">Improving accuracy… %d</string>
+
+    <!-- Confirmation buttons -->
+    <string name="confirm_location">Confirm Location</string>
+    <string name="confirm_location_low_accuracy">Confirm (Low Accuracy)</string>
+    <string name="confirm_without_location">Close</string>
+
+    <!-- GPS accuracy messages -->
+    <string name="gps_accuracy_display">GPS Accuracy: %d meters</string>
+
+    <!-- GPS messages -->
+    <string name="gps_required_message">GPS must be enabled for this feature</string>
+    <string name="gps_activation_error">Error activating GPS</string>
+    <string name="gps_activation_failed">Could not activate GPS</string>
+
+    <!-- GPS activation/deactivation messages -->
+    <string name="gps_activated_title">GPS Activated</string>
+    <string name="gps_activate_message">GPS has been activated for this function. Would you like to disable it now to save battery?</string>
+    <string name="yes_disable">Yes, disable</string>
+    <string name="no_keep_active">No, keep active</string>
+    <string name="cannot_open_location_settings">Could not open location settings</string>
+
+    <!-- Error messages -->
+    <string name="location_permission_required">Location permission is required for this feature</string>
+    <string name="location_timeout">Timeout getting location. Please try again.</string>
+    <string name="security_error_location">Security error accessing location</string>
+
+    <!-- Android version messages -->
+    <string name="android_version_not_supported">This feature requires Android 10 or newer</string>
 </resources>

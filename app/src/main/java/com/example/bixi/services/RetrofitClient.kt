@@ -3,8 +3,11 @@ package com.example.bixi.services
 import android.util.Log
 import com.example.bixi.interfaces.AuthApi
 import com.example.bixi.models.api.ApiResponse
+import com.example.bixi.models.api.AttendanceRequest
+import com.example.bixi.models.api.CommentResponse
 import com.example.bixi.models.api.CreateTaskRequest
 import com.example.bixi.models.api.EditTaskRequest
+import com.example.bixi.models.api.EmployeeResponse
 import com.example.bixi.models.api.ForgotPasswordRequest
 import com.example.bixi.models.api.GetTasksRequest
 import com.example.bixi.models.api.LoginRequest
@@ -103,7 +106,7 @@ object RetrofitClient {
             val response = call()
             if (response.isSuccessful) {
                 val body = response.body()!!
-                ApiResponse(body.success, body.statusCode, body.data)
+                ApiResponse(body.success, body.statusCode, body?.data)
             } else {
                 val code = response.body()?.statusCode ?: -1
                 ApiResponse(false, code, null)
@@ -138,6 +141,19 @@ object RetrofitClient {
         return handleApiCall { instance.getTasks(parameter, bearerToken) }
     }
 
+    suspend fun getComments(taskId: String): ApiResponse<List<CommentResponse>> {
+        // Verifică și refresh token dacă este necesar
+        val validToken = ensureValidToken()
+
+        if (validToken == null) {
+            // Token invalid sau refresh a eșuat
+            return ApiResponse(false, -1, null)
+        }
+
+        val bearerToken = "Bearer $validToken"
+        return handleApiCall { instance.getComments(taskId,bearerToken) }
+    }
+
     suspend fun getTaskById(taskId: String): ApiResponse<TaskDetailsResponse> {
         val validToken = ensureValidToken()
 
@@ -147,6 +163,17 @@ object RetrofitClient {
 
         val bearerToken = "Bearer $validToken"
         return handleApiCall { instance.getTaskById(taskId, bearerToken) }
+    }
+
+    suspend fun getEmployees(): ApiResponse<List<EmployeeResponse>> {
+        val validToken = ensureValidToken()
+
+        if (validToken == null) {
+            return ApiResponse(false, -1, null)
+        }
+
+        val bearerToken = "Bearer $validToken"
+        return handleApiCall { instance.getEmployees(bearerToken) }
     }
 
     suspend fun createTask(parameter: CreateTaskRequest, attachments: List<MultipartBody.Part>): ApiResponse<Any> {
@@ -163,7 +190,7 @@ object RetrofitClient {
         val assigneeBody = parameter.assigneeId.toRequestBody(mediaType)
         val startDateBody = parameter.startDate.toRequestBody(mediaType)
         val endDateBody = parameter.endDate.toRequestBody(mediaType)
-        val descriptionBody = parameter.description.toRequestBody(mediaType)
+        val descriptionBody = (parameter.description ?: "").toRequestBody(mediaType)
         val creatorIdBody = parameter.creatorId.toRequestBody(mediaType)
         val checkListBody = parameter.checklist.toRequestBody(mediaType)
 
@@ -184,14 +211,25 @@ object RetrofitClient {
         val mediaType = "text/plain".toMediaTypeOrNull()
         val titleBody = parameter.title.toRequestBody(mediaType)
 //        val assigneeBody = parameter.assigneeId.toRequestBody(mediaType)
-//        val startDateBody = parameter.startDate.toRequestBody(mediaType)
-//        val endDateBody = parameter.endDate.toRequestBody(mediaType)
+        val startDateBody = parameter.startDate.toRequestBody(mediaType)
+        val endDateBody = parameter.endDate.toRequestBody(mediaType)
         val descriptionBody = parameter.description.toRequestBody(mediaType)
         val checkListBody = parameter.checklist.toRequestBody(mediaType)
 
         val bearerToken = "Bearer $validToken"
         return handleApiCall { instance.editTask(parameter.id,titleBody, descriptionBody, checkListBody,
-            attachments, bearerToken) }
+            startDateBody, endDateBody ,attachments, bearerToken) }
+    }
+
+    suspend fun delete(taskId: String): ApiResponse<Any> {
+        val validToken = ensureValidToken()
+
+        if (validToken == null) {
+            return ApiResponse(false, -1, null)
+        }
+
+        val bearerToken = "Bearer $validToken"
+        return handleApiCall { instance.delete(taskId, bearerToken) }
     }
 
     suspend fun forgotPassword(parameter: ForgotPasswordRequest): ApiResponse<Any> {
@@ -207,6 +245,17 @@ object RetrofitClient {
         } catch (e: Exception) {
             ApiResponse(false, -1, null) // sau log/return e.message
         }
+    }
+
+    suspend fun attendance(parameter: AttendanceRequest): ApiResponse<Any> {
+        val validToken = ensureValidToken()
+
+        if (validToken == null) {
+            return ApiResponse(false, -1, null)
+        }
+
+        val bearerToken = "Bearer $validToken"
+        return handleApiCall { instance.attendance(parameter, bearerToken) }
     }
 
     // Metodă utilă pentru a verifica dacă utilizatorul este autentificat

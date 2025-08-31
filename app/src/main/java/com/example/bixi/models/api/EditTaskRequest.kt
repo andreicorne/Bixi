@@ -6,6 +6,6 @@ data class EditTaskRequest(
     val description: String,
 //    val assigneeId: String,
     val checklist: String,
-//    val startDate: String,
-//    val endDate: String
+    val startDate: String,
+    val endDate: String
 )

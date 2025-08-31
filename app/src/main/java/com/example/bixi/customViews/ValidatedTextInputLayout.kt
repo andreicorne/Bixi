@@ -5,14 +5,14 @@ import android.text.Editable
 import android.util.AttributeSet
 import com.google.android.material.textfield.TextInputLayout
 import android.text.TextWatcher
+import com.example.bixi.models.Validator
+import com.example.bixi.R
 
 class ValidatedTextInputLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = com.google.android.material.R.attr.textInputStyle
 ) : TextInputLayout(context, attrs, defStyleAttr) {
-
-    data class Validator(val regex: Regex, val errorMessage: String)
 
     var onFocusLostListener: ((Boolean) -> Unit)? = null
 
@@ -34,19 +34,16 @@ class ValidatedTextInputLayout @JvmOverloads constructor(
             editText?.addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
                     setter(s.toString())
+                    if(!error.isNullOrEmpty()){
+                        val isValid = validate()
+                        onFocusLostListener?.invoke(isValid)
+                    }
                 }
 
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             })
         }
-    }
-
-    /**
-     * Adaugă un validator la listă.
-     */
-    fun addValidator(regex: Regex, errorMessage: String) {
-        validators.add(Validator(regex, errorMessage))
     }
 
     /**

@@ -6,6 +6,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.bixi.enums.AttachmentType
+import com.example.bixi.enums.TaskViewMode
+import com.example.bixi.helper.ApiStatus
 import com.example.bixi.helper.Utils
 import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.CheckItem
@@ -21,7 +23,7 @@ class TaskDetailsViewModel : BaseViewModel() {
 
     private var originalData: TaskUIData? = null
 
-    var isCreateMode: Boolean = false
+    lateinit var viewMode: TaskViewMode
     var taskId: String = ""
 
     private val _title = MutableLiveData<String>()
@@ -30,14 +32,17 @@ class TaskDetailsViewModel : BaseViewModel() {
     private val _description = MutableLiveData<String>()
     val description: LiveData<String> = _description
 
+    private val _startDateTimeText = MutableLiveData<String>()
+    val startDateTimeText: LiveData<String> = _startDateTimeText
+
+    private val _endDateTimeText = MutableLiveData<String>()
+    val endDateTimeText: LiveData<String> = _endDateTimeText
+
     private val _startDateTime = MutableLiveData<Calendar?>()
     val startDateTime: LiveData<Calendar?> = _startDateTime
 
     private val _endDateTime = MutableLiveData<Calendar?>()
     val endDateTime: LiveData<Calendar?> = _endDateTime
-
-    private val _serverStatusResponse = MutableLiveData<Boolean>()
-    val serverStatusResponse: LiveData<Boolean> = _serverStatusResponse
 
     private val _attachments = MutableLiveData<List<AttachmentItem>>(mutableListOf(AttachmentItem()))
     val attachments: LiveData<List<AttachmentItem>> = _attachments
@@ -45,11 +50,15 @@ class TaskDetailsViewModel : BaseViewModel() {
     private val _responsibles = MutableLiveData<List<String>>(mutableListOf())
     val responsibles: LiveData<List<String>> = _responsibles
 
-    private val _responsible = MutableLiveData<String>()
-    val responsible: LiveData<String> = _responsible
+    private val _responsible = MutableLiveData<Int>()
+    val responsible: LiveData<Int> = _responsible
 
     private val _checks = MutableLiveData<List<CheckItem>>(emptyList())
     val checks: LiveData<List<CheckItem>> = _checks
+
+    init {
+        _responsibles.value = listOf("Marius", "Cosmin", "Flavius")
+    }
 
     fun getData(){
         _responsibles.value = listOf("Marius", "Cosmin", "Flavius")
@@ -65,7 +74,7 @@ class TaskDetailsViewModel : BaseViewModel() {
                     _description.value = UIMapperService.fromHtmlToPlainText(task.description)
 
                     //TODO: reset. need from server
-                    _responsible.value = "Andrei"
+                    _responsible.value = 1
 
                     setEndDateTimeFromServer(task.endDate)
                     setStartDateTimeFromServer(task.startDate)
@@ -80,14 +89,32 @@ class TaskDetailsViewModel : BaseViewModel() {
                     originalData = TaskUIData(title.value!!, description.value!!, startDateTime.value!!, endDateTime.value!!,
                         attachments.value!!, responsible.value, checks.value!!)
 
-                    _serverStatusResponse.postValue(true)
-                } else {
-                    _serverStatusResponse.postValue(false)
+                }
+                else{
+                    _sendResponseCode.postValue(response.statusCode)
                 }
 
             } catch (e: Exception) {
                 Log.e("API", "Exception: ${e.message}")
-                _serverStatusResponse.postValue(false)
+                _sendResponseCode.postValue(ApiStatus.SERVER_ERROR.code)
+            }
+        }
+    }
+
+    fun delete(onSuccess: () -> Unit) {
+        setLoading(true)
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.delete(taskId)
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    _sendResponseCode.postValue(1)
+                }
+
+            } catch (e: Exception) {
+                Log.e("API", "Exception: ${e.message}")
+                _sendResponseCode.postValue(1)
             }
         }
     }
@@ -124,7 +151,7 @@ class TaskDetailsViewModel : BaseViewModel() {
     fun resetChanges(){
         _title.value = originalData!!.title
         _description.value = originalData!!.description
-        _responsible.value = if(originalData!!.responsible.isNullOrBlank()) "" else originalData!!.responsible!!
+        _responsible.value = if(originalData!!.responsible == null) 0 else originalData!!.responsible!!
 
         _startDateTime.value = originalData!!.startDate
         _endDateTime.value = originalData!!.endDate
@@ -177,8 +204,8 @@ class TaskDetailsViewModel : BaseViewModel() {
         _endDateTime.value = calendar
     }
 
-    fun setResponsible(name: String){
-        _responsible.value = name
+    fun setResponsible(pos: Int){
+        _responsible.value = pos
     }
 
     /**
@@ -389,6 +416,14 @@ class TaskDetailsViewModel : BaseViewModel() {
 
             _checks.value = finalList
         }
+    }
+
+    fun setStartDateTime(dateStr: String) {
+        _startDateTimeText.value = dateStr
+    }
+
+    fun setEndDateTime(dateStr: String) {
+        _endDateTimeText.value = dateStr
     }
 
     fun setEndDateTimeFromServer(dateStr: String) {

@@ -1,4 +1,4 @@
-package com.example.bixi.activities
+package com.example.bixi.ui.activities
 
 import android.content.Intent
 import android.content.res.Configuration

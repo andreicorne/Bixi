@@ -1,4 +1,4 @@
-package com.example.bixi.activities
+package com.example.bixi.ui.activities
 
 import android.content.Context
 import android.content.Intent
@@ -25,7 +25,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.bixi.R
 import com.example.bixi.databinding.ActivityMainBinding
-import com.example.bixi.fragments.TasksFragment
+import com.example.bixi.ui.fragments.TasksFragment
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.services.DialogService

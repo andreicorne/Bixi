@@ -1,4 +1,4 @@
-package com.example.bixi.customViews
+package com.example.bixi.ui.dialogs
 
 import android.app.Dialog
 import android.os.Bundle
@@ -7,9 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bixi.R
-import com.example.bixi.adapters.BottomSheetOptionsAdapter
 import com.example.bixi.databinding.BottomSheetBinding
 import com.example.bixi.models.BottomSheetItem
+import com.example.bixi.ui.adapters.BottomSheetOptionsAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
@@ -48,7 +48,8 @@ class CustomBottomSheetFragment : BottomSheetDialogFragment() {
             dismiss()  // Închide BottomSheet după ce o opțiune este selectată
         }
 
-        binding.recyclerView.layoutManager = LinearLayoutManager(inflater.context, LinearLayoutManager.VERTICAL, false)
+        binding.recyclerView.layoutManager =
+            LinearLayoutManager(inflater.context, LinearLayoutManager.VERTICAL, false)
         binding.recyclerView.adapter = adapter
 
         return binding.root

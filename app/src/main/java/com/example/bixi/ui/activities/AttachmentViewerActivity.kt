@@ -1,4 +1,4 @@
-package com.example.bixi.activities
+package com.example.bixi.ui.activities
 
 import android.app.DownloadManager
 import android.content.Context
@@ -205,7 +205,6 @@ class AttachmentViewerActivity : BaseActivity() {
             showError(getString(R.string.document_not_found))
             return
         }
-
 
         loadRemoteDocument(uri.toString())
     }

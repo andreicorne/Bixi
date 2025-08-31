@@ -1,4 +1,4 @@
-package com.example.bixi.adapters
+package com.example.bixi.ui.adapters
 
 import android.content.Context
 import android.net.Uri

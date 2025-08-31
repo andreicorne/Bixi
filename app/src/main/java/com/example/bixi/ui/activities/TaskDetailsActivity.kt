@@ -1,6 +1,5 @@
-package com.example.bixi.activities
+package com.example.bixi.ui.activities
 
-import android.app.Activity
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
@@ -10,6 +9,7 @@ import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -21,23 +21,31 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
+import androidx.core.widget.doOnTextChanged
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bixi.AppSession
 import com.example.bixi.R
-import com.example.bixi.adapters.AttachmentListAdapter
-import com.example.bixi.adapters.CheckListAdapter
+import com.example.bixi.ui.adapters.AttachmentListAdapter
+import com.example.bixi.ui.adapters.CheckListAdapter
 import com.example.bixi.constants.AppConstants
 import com.example.bixi.constants.NavigationConstants
 import com.example.bixi.databinding.ActivityTaskDetailsBinding
+import com.example.bixi.enums.FieldType
+import com.example.bixi.enums.TaskActionType
+import com.example.bixi.enums.TaskViewMode
 import com.example.bixi.helper.AttachmentConverter
 import com.example.bixi.helper.AttachmentOpenExternalHelper
 import com.example.bixi.helper.AttachmentSelectionHelper
 import com.example.bixi.helper.BackgroundStylerService
+import com.example.bixi.helper.ExtensionHelper
 import com.example.bixi.helper.LocaleHelper
+import com.example.bixi.helper.ResponseStatusHelper
 import com.example.bixi.helper.Utils
+import com.example.bixi.helper.ValidatorHelper
 import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.CheckItem
 import com.example.bixi.models.api.CheckItemResponse
@@ -63,7 +71,8 @@ class TaskDetailsActivity : BaseActivity() {
 
     private lateinit var adapterChecks: CheckListAdapter
 
-    private var taskWasCreated: Boolean = false
+    private var resultReturnType: TaskActionType = TaskActionType.EMPTY
+
     var isShadowVisible = false
 
     // Sistem centralizat pentru atașamente
@@ -94,9 +103,11 @@ class TaskDetailsActivity : BaseActivity() {
 
         val taskId = intent.getStringExtra(NavigationConstants.TASK_ID_NAV)
         if(taskId.isNullOrBlank()){
-            viewModel.isCreateMode = true
+            viewModel.viewMode = TaskViewMode.CREATE
         }
         else{
+            // TODO: daca ii admin ii edit, altfel PREVIEW
+            viewModel.viewMode = TaskViewMode.EDIT
             viewModel.taskId = taskId
         }
 
@@ -104,9 +115,8 @@ class TaskDetailsActivity : BaseActivity() {
             onBack()
         }
 
-        // Inițializează helper-ul pentru atașamente
         setupAttachmentHelper()
-
+        setupInputValidations()
         initToolbar()
         initListeners()
         initCheckList()
@@ -115,6 +125,7 @@ class TaskDetailsActivity : BaseActivity() {
         setStyles()
         setupViewModel()
         setupBindings()
+        setUIMode()
     }
 
     private fun setupAttachmentHelper() {
@@ -135,7 +146,6 @@ class TaskDetailsActivity : BaseActivity() {
         binding.btnAddCheckItem.setOnClickListener {
             addCheckItem()
         }
-
         binding.etCheckItem.setOnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE ||
                 actionId == EditorInfo.IME_ACTION_GO ||
@@ -166,17 +176,13 @@ class TaskDetailsActivity : BaseActivity() {
             }
         }
 
-        binding.ivDelete.setOnClickListener {
-            onBack()
-        }
-
         binding.ivReset.setOnClickListener {
             animateResetFields()
         }
         binding.ivReset.visibility = View.GONE
 
         binding.ivSetDone.setOnClickListener {
-            if(viewModel.isCreateMode){
+            if(viewModel.viewMode == TaskViewMode.CREATE){
                 createTask()
             }
             else{
@@ -186,6 +192,7 @@ class TaskDetailsActivity : BaseActivity() {
 
         binding.ivChat.setOnClickListener {
             val intent = Intent(this, ChatActivity::class.java)
+            intent.putExtra(NavigationConstants.TASK_ID_NAV, viewModel.taskId)
             startActivity(intent)
         }
 
@@ -196,12 +203,34 @@ class TaskDetailsActivity : BaseActivity() {
             setResetBtnVisibility()
         }
 
+        binding.ivDelete.setOnClickListener {
+            viewModel.delete({
+                onSuccessfullyDeleted()
+            })
+        }
+
+        binding.etCheckItem.doOnTextChanged { text, _, _, _ ->
+            binding.btnAddCheckItem.isEnabled = !text.isNullOrEmpty()
+        }
+
         // TODO: for open edittext window
 //        binding.etDescription.setOnClickListener {
 //            openDescriptionEdit()
 //        }
+
+        binding.etDescription.setOnTouchListener { v, event ->
+            if (v.hasFocus()) {
+                v.parent.requestDisallowInterceptTouchEvent(true)
+
+                if (event.action == MotionEvent.ACTION_UP) {
+                    v.parent.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            false
+        }
     }
 
+    // TODO: for open edittext window
     private fun openDescriptionEdit() {
         val intent = Intent(this, EditTextActivity::class.java)
         intent.putExtra(NavigationConstants.EDITTEXT_TEXT_NAV, binding.etDescription.text.toString())
@@ -219,7 +248,26 @@ class TaskDetailsActivity : BaseActivity() {
         binding.ivReset.visibility = if(hasChanges) View.VISIBLE else View.GONE
     }
 
+    private fun setupBindings(){
+        binding.tlTitle.bindTo(viewModel::setTitle)
+        binding.tlDescription.bindTo(viewModel::setDescription)
+        binding.tlStartDate.bindTo(viewModel::setEndDateTime)
+        binding.tlEndDate.bindTo(viewModel::setStartDateTime)
+    }
+
+    private fun setupInputValidations(){
+        binding.tlTitle.setValidators(ValidatorHelper.getValidatorsFor(FieldType.TASK_TITLE))
+        binding.tlDescription.setValidators(ValidatorHelper.getValidatorsFor(FieldType.TASK_DETAILS))
+        binding.tlResponsible.setValidators(ValidatorHelper.getValidatorsFor(FieldType.TASK_RESPONSIBLE))
+        binding.tlStartDate.setValidators(ValidatorHelper.getValidatorsFor(FieldType.TASK_START_DATE))
+        binding.tlEndDate.setValidators(ValidatorHelper.getValidatorsFor(FieldType.TASK_END_DATE))
+    }
+
     private fun createTask() {
+        if(!isValidFields()){
+            return
+        }
+
         showLoading(true)
         lifecycleScope.launch {
             try {
@@ -233,7 +281,7 @@ class TaskDetailsActivity : BaseActivity() {
                 val gson = Gson()
                 val checksJson = gson.toJson(checkItemResponses)
 
-                val createTaskRequest = CreateTaskRequest(viewModel.title.value!!, viewModel.description.value!!,
+                val createTaskRequest = CreateTaskRequest(viewModel.title.value!!, viewModel.description.value,
                     AppSession.user!!.user.id, "98112922-056b-4aa9-834b-f56004b43bc5", checksJson,
                     Utils.calendarToUtcIsoString(viewModel.startDateTime.value!!),
                     Utils.calendarToUtcIsoString(viewModel.endDateTime.value!!))
@@ -254,6 +302,10 @@ class TaskDetailsActivity : BaseActivity() {
     }
 
     private fun editTask() {
+        if(!isValidFields()){
+            return
+        }
+
         showLoading(true)
         lifecycleScope.launch {
             try {
@@ -268,12 +320,13 @@ class TaskDetailsActivity : BaseActivity() {
                 val checksJson = gson.toJson(checkItemResponses)
 
                 val editTaskRequest = EditTaskRequest(viewModel.taskId,viewModel.title.value!!, viewModel.description.value!!,
-                    checksJson,)
+                    checksJson, Utils.calendarToUtcIsoString(viewModel.startDateTime.value!!),
+                    Utils.calendarToUtcIsoString(viewModel.endDateTime.value!!))
 
                 val parts = prepareAttachments(baseContext, viewModel.attachments.value!!)
                 val response = RetrofitClient.editTask(editTaskRequest, parts)
                 if (response.success) {
-                    onSuccessfullyCreated()
+                    onSuccessfullyEdited()
                 } else {
                 }
                 showLoading(false)
@@ -285,8 +338,29 @@ class TaskDetailsActivity : BaseActivity() {
         }
     }
 
+    private fun isValidFields() : Boolean{
+        val isValid = listOf(
+            binding.tlTitle.validate(),
+            binding.tlDescription.validate(),
+            binding.tlResponsible.validate(),
+            binding.tlStartDate.validate(),
+            binding.tlEndDate.validate()
+        ).all { it }
+        return isValid
+    }
+
+    private fun onSuccessfullyDeleted(){
+        resultReturnType = TaskActionType.DELETE
+        onBack()
+    }
+
+    private fun onSuccessfullyEdited(){
+        resultReturnType = TaskActionType.EDIT
+        onBack()
+    }
+
     private fun onSuccessfullyCreated(){
-        taskWasCreated = true
+        resultReturnType = TaskActionType.CREATE
         onBack()
     }
 
@@ -398,6 +472,10 @@ class TaskDetailsActivity : BaseActivity() {
     }
 
     private fun addCheckItem(){
+        if(binding.etCheckItem.text.isNullOrBlank()){
+            return
+        }
+
         viewModel.addCheckItem(CheckItem(text =  binding.etCheckItem.text.toString(), done = false))
         binding.etCheckItem.text.clear()
 
@@ -463,15 +541,20 @@ class TaskDetailsActivity : BaseActivity() {
             }
             else{
                 val fileName = attachment.serverData?.name ?: getFileName(attachment.uri!!)
-                val intent = Intent(this, AttachmentViewerActivity::class.java).apply {
-                    putExtra(NavigationConstants.ATTACHMENT_URI, attachment.uri.toString())
-                    putExtra(NavigationConstants.ATTACHMENT_TYPE, attachment.type.name)
-                    putExtra(NavigationConstants.ATTACHMENT_NAME, fileName)
-                    if (attachment.serverData != null) {
-                        putExtra(NavigationConstants.ATTACHMENT_SERVER_DATA, attachment.serverData)
+                when (ExtensionHelper.getExtension(fileName)){
+                    "csv", "xlsx", "xls" -> AttachmentOpenExternalHelper.open(this, attachment)
+                    else -> {
+                        val intent = Intent(this, AttachmentViewerActivity::class.java).apply {
+                            putExtra(NavigationConstants.ATTACHMENT_URI, attachment.uri.toString())
+                            putExtra(NavigationConstants.ATTACHMENT_TYPE, attachment.type.name)
+                            putExtra(NavigationConstants.ATTACHMENT_NAME, fileName)
+                            if (attachment.serverData != null) {
+                                putExtra(NavigationConstants.ATTACHMENT_SERVER_DATA, attachment.serverData)
+                            }
+                        }
+                        startActivity(intent)
                     }
                 }
-                startActivity(intent)
             }
         } else {
             onAddAttachment()
@@ -493,12 +576,11 @@ class TaskDetailsActivity : BaseActivity() {
     }
 
     private fun setupViewModel(){
-        viewModel.serverStatusResponse.observe(this) { success ->
-            if (success) {
-            } else {
-                Toast.makeText(this, getString(R.string.server_error_generic_message), Toast.LENGTH_SHORT).show()
-            }
-        }
+
+        viewModel.sendResponseCode.observe(this, Observer { statusCode ->
+            ResponseStatusHelper.showStatusMessage(this, statusCode)
+            showLoading(false)
+        })
 
         viewModel.responsibles.observe(this) { list ->
             val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, list)
@@ -517,6 +599,14 @@ class TaskDetailsActivity : BaseActivity() {
             }
         }
 
+        viewModel.responsible.observe(this) { pos ->
+            val adapter = binding.tvResponsible.adapter
+            if (adapter != null && pos in 0 until adapter.count) {
+                val item = adapter.getItem(pos)
+                binding.tvResponsible.setText(item.toString(), false)
+            }
+        }
+
         viewModel.startDateTime.observe(this) { date ->
             date?.let {
                 binding.etStartDate.setText(SimpleDateFormat(AppConstants.DATE_FORMAT, Locale.getDefault()).format(it.time))
@@ -531,20 +621,14 @@ class TaskDetailsActivity : BaseActivity() {
             }
         }
 
-        if(!viewModel.isCreateMode){
+        if(viewModel.viewMode != TaskViewMode.CREATE){
             viewModel.getData()
         }
     }
 
-    private fun setupBindings(){
-        binding.tlTitle.bindTo(viewModel::setTitle)
-        binding.tlDescription.bindTo(viewModel::setDescription)
-    }
-
     private fun initResponsible(){
         binding.tvResponsible.setOnItemClickListener { _, _, position, _ ->
-            val selected = viewModel.responsibles.value.get(position)
-            viewModel.setResponsible(selected)
+            viewModel.setResponsible(position)
             binding.tvResponsible.clearFocus()
 
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -615,10 +699,26 @@ class TaskDetailsActivity : BaseActivity() {
             .start()
     }
 
+    fun setUIMode(){
+
+        when(viewModel.viewMode){
+            TaskViewMode.CREATE -> {
+                binding.ivChat.visibility = View.GONE
+                binding.ivDelete.visibility = View.GONE
+            }
+            TaskViewMode.EDIT -> {
+
+            }
+            TaskViewMode.PREVIEW -> {
+                binding.ivDelete.visibility = View.GONE
+            }
+        }
+    }
+
     private fun onBack(){
         val resultIntent = Intent()
-        resultIntent.putExtra(NavigationConstants.TASK_NAVIGATION_BACK, taskWasCreated)
-        setResult(Activity.RESULT_OK, resultIntent)
+        resultIntent.putExtra(NavigationConstants.TASK_NAVIGATION_BACK, resultReturnType.ordinal)
+        setResult(RESULT_OK, resultIntent)
         supportFinishAfterTransition()
     }
 

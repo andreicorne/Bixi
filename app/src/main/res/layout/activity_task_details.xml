@@ -8,8 +8,8 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:clickable="true"
-    android:transitionName="task_details_transition"
     android:focusableInTouchMode="true"
+    android:transitionName="task_details_transition"
     tools:context=".activities.TaskDetailsActivity">
 
     <RelativeLayout
@@ -92,6 +92,8 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusableInTouchMode="true"
             android:paddingBottom="80dp">
 
             <com.google.android.material.textview.MaterialTextView
@@ -165,12 +167,13 @@
                     android:layout_height="wrap_content"
                     android:inputType="textMultiLine"
                     android:minLines="4"
+                    android:maxLines="12"
                     android:gravity="top|start"
                     android:overScrollMode="always"
                     android:scrollbars="vertical" />
             </com.example.bixi.customViews.ValidatedTextInputLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
+            <com.example.bixi.customViews.ValidatedTextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.FilledBox.ExposedDropdownMenu"
                 android:id="@+id/tl_responsible"
                 android:layout_width="match_parent"
@@ -193,7 +196,7 @@
                     android:inputType="none"
                     android:importantForAccessibility="no"
                     android:focusable="true" />
-            </com.google.android.material.textfield.TextInputLayout>
+            </com.example.bixi.customViews.ValidatedTextInputLayout>
 
             <com.google.android.material.textview.MaterialTextView
                 style="@style/TextAppearance.Material3.BodyMedium"
@@ -216,9 +219,9 @@
                 android:layout_marginEnd="20dp"
                 android:layout_marginTop="12dp"
                 android:orientation="vertical">
-                <com.google.android.material.textfield.TextInputLayout
+                <com.example.bixi.customViews.ValidatedTextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.FilledBox"
-                    android:id="@+id/fl_start_date"
+                    android:id="@+id/tl_start_date"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
@@ -240,9 +243,9 @@
                         android:focusable="false"
                         android:hint="@string/start"
                         android:inputType="none" />
-                </com.google.android.material.textfield.TextInputLayout>
+                </com.example.bixi.customViews.ValidatedTextInputLayout>
 
-                <com.google.android.material.textfield.TextInputLayout
+                <com.example.bixi.customViews.ValidatedTextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.FilledBox"
                     android:id="@+id/tl_end_date"
                     android:layout_width="match_parent"
@@ -264,7 +267,7 @@
                         android:focusable="false"
                         android:hint="@string/finish"
                         android:inputType="none" />
-                </com.google.android.material.textfield.TextInputLayout>
+                </com.example.bixi.customViews.ValidatedTextInputLayout>
             </LinearLayout>
 
             <com.google.android.material.textview.MaterialTextView
@@ -314,6 +317,7 @@
                     android:id="@+id/btn_add_check_item"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
+                    android:enabled="false"
                     android:layout_below="@+id/rl_check_list"
                     android:layout_alignParentEnd="true"
                     android:layout_marginEnd="12dp"

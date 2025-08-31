@@ -1,28 +1,16 @@
-package com.example.bixi.adapters
+package com.example.bixi.ui.adapters
 
-import android.app.Activity
-import android.app.ActivityOptions
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.provider.OpenableColumns
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.bixi.R
-import com.example.bixi.activities.TaskDetailsActivity
-import com.example.bixi.enums.AttachmentType
 import com.example.bixi.helper.BackgroundStylerService
-import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.UITaskList
 
 class TaskListAdapter(private val listener: (position: Int) -> Unit) :

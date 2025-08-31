@@ -37,47 +37,44 @@
         android:id="@+id/rl_document_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"
+        android:visibility="visible"
         android:layout_margin="4dp">
         <LinearLayout
+            android:id="@+id/ll_extension_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
-            <LinearLayout
-                android:id="@+id/ll_extension_container"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:padding="4dp">
-                <ImageView
-                    android:id="@+id/iv_document"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_document"
-                    app:tint="#ffffff" />
-                <TextView
-                    android:id="@+id/tv_extension"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:gravity="center_vertical"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="#ffffff"/>
-            </LinearLayout>
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="40dp"
+            android:gravity="center_vertical"
+            android:padding="4dp">
+            <ImageView
+                android:id="@+id/iv_document"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_document"
+                app:tint="#ffffff" />
             <TextView
-                android:id="@+id/tv_file_name"
+                android:id="@+id/tv_extension"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="2dp"
-                android:ellipsize="end"
-                android:maxLines="4"
-                android:gravity="center_horizontal"
-                android:layout_gravity="bottom"/>
+                android:layout_marginStart="4dp"
+                android:gravity="center_vertical"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#ffffff"/>
         </LinearLayout>
+        <TextView
+            android:id="@+id/tv_file_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/ll_extension_container"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginTop="6dp"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:gravity="center_horizontal"
+            android:layout_gravity="bottom"/>
     </RelativeLayout>
 
     <com.google.android.material.card.MaterialCardView

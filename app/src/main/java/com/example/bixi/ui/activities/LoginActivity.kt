@@ -1,20 +1,22 @@
-package com.example.bixi.activities
+package com.example.bixi.ui.activities
 
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
 import com.example.bixi.AppSession
 import com.example.bixi.R
 import com.example.bixi.constants.StorageKeys
-import com.example.bixi.customViews.ValidatedTextInputLayout
 import com.example.bixi.databinding.ActivityLoginBinding
+import com.example.bixi.enums.FieldType
+import com.example.bixi.helper.ApiStatus
 import com.example.bixi.helper.BackgroundStylerService
 import com.example.bixi.helper.LocaleHelper
+import com.example.bixi.helper.ResponseStatusHelper
+import com.example.bixi.helper.ValidatorHelper
 import com.example.bixi.services.JsonConverterService
 import com.example.bixi.services.SecureStorageService
 import com.example.bixi.viewModels.LoginViewModel
@@ -22,7 +24,7 @@ import com.example.bixi.viewModels.LoginViewModel
 class LoginActivity : BaseActivity() {
 
     private lateinit var binding: ActivityLoginBinding
-    private val loginViewModel: LoginViewModel by viewModels()
+    private val viewModel: LoginViewModel by viewModels()
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.applyLocale(newBase))
@@ -38,28 +40,32 @@ class LoginActivity : BaseActivity() {
 
         setupViewModel()
         setupInputValidations()
+        setupBindings()
         setupClickListeners()
         setStyles()
 
-        binding.etUsername.setText("info@extravel.be")
-        binding.etPassword.setText("dcttest123")
+        viewModel.setEmail("info+test@extravel.be")
+        viewModel.setPassword("dcttest123")
+    }
+
+    private fun setupBindings(){
+        binding.tlUsername.bindTo(viewModel::setEmail)
+        binding.tlPassword.bindTo(viewModel::setPassword)
     }
 
     private fun setupInputValidations(){
-        binding.usernameLayout.setValidators(
-            listOf(
-                ValidatedTextInputLayout.Validator(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"), "Formatul nu este bun"),
-                ValidatedTextInputLayout.Validator(Regex(".{8,}"), "Trebuie să aibă minim 8 caractere")
-            )
-        )
+        binding.tlUsername.setValidators(ValidatorHelper.getValidatorsFor(FieldType.EMAIL))
+        binding.tlPassword.setValidators(ValidatorHelper.getValidatorsFor(FieldType.LOGIN_PASSWORD))
     }
 
     private fun setupClickListeners(){
         binding.btnLogin.setOnClickListener{
-//            binding.usernameLayout.validate()
+            if(!isValidFields()){
+                return@setOnClickListener
+            }
 
             showLoading(true)
-            loginViewModel.login(binding.etUsername.text.toString(), binding.etPassword.text.toString())
+            viewModel.login()
         }
 
         binding.tvForgotPassword.setOnClickListener {
@@ -68,24 +74,43 @@ class LoginActivity : BaseActivity() {
         }
     }
 
+    private fun isValidFields() : Boolean{
+        val isValid = listOf(
+            binding.tlUsername.validate(),
+            binding.tlPassword.validate()
+        ).all { it }
+        return isValid
+    }
+
     private fun setupViewModel(){
-        loginViewModel.isLoading.observe(this) { isLoading ->
+        viewModel.email.observe(this) { newText ->
+            if (binding.tlUsername.editText?.text.toString() != newText) {
+                binding.tlUsername.editText?.setText(newText)
+            }
+        }
+
+        viewModel.password.observe(this) { newText ->
+            if (binding.tlPassword.editText?.text.toString() != newText) {
+                binding.tlPassword.editText?.setText(newText)
+            }
+        }
+
+        viewModel.isLoading.observe(this) { isLoading ->
             showLoading(isLoading)
         }
 
-        loginViewModel.loginSuccess.observe(this) { success ->
-            if (success) {
-                showLoading(false, {
-                    AppSession.user!!.user.password = binding.etPassword.text.toString()
-                    SecureStorageService.putString(this, StorageKeys.USER_TOKEN, JsonConverterService.toJson(AppSession.user))
-                    val intent = Intent(this, MainActivity::class.java)
-                    startActivity(intent)
-                })
-            } else {
-                Toast.makeText(this, getString(R.string.server_error_generic_message), Toast.LENGTH_SHORT).show()
-                showLoading(false)
+        viewModel.sendResponseCode.observe(this, Observer { statusCode ->
+            if(ApiStatus.fromCode(statusCode) == ApiStatus.SERVER_SUCCESS){
+                AppSession.user!!.user.password = viewModel.password.value
+                SecureStorageService.putString(this, StorageKeys.USER_TOKEN, JsonConverterService.toJson(AppSession.user))
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                return@Observer
             }
-        }
+
+            ResponseStatusHelper.showStatusMessage(this, statusCode)
+            showLoading(false)
+        })
     }
 
     private fun setStyles(){

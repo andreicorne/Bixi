@@ -1,4 +1,4 @@
-package com.example.bixi.fragments
+package com.example.bixi.ui.fragments
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate

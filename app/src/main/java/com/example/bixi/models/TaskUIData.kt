@@ -8,6 +8,6 @@ data class TaskUIData(
     var startDate: Calendar,
     var endDate: Calendar,
     var attachments: List<AttachmentItem>,
-    var responsible: String?,
+    var responsible: Int?,
     var checks: List<CheckItem>
 )

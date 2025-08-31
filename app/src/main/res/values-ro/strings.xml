@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bixi</string>
+
+    <string name="server_error_generic_message">Eroare server. Încearcă din nou</string>
+    <string name="server_forgot_password_success">Linkul de resetare a fost trimis. Verifică-ți emailul</string>
+
     <string name="username">Nume utilizator</string>
     <string name="timekeeper">Pontare</string>
     <string name="tasks">Sarcini</string>
@@ -59,9 +63,7 @@
     <string name="forgot_password_message">Introdu emailul pentru a primi instrucțiuni despre cum să îți resetezi parola</string>
     <string name="send">Trimite</string>
     <string name="reset_the_password">Resetează parola</string>
-
-    <string name="server_error_generic_message">Eroare server. Încearcă din nou</string>
-    <string name="server_forgot_password_success">Linkul de resetare a fost trimis. Verifică-ți emailul</string>
+    <string name="password">Parolă</string>
 
     <string name="register">Înregistrează-te</string>
     <string name="sign_in">Conectează-te</string>
@@ -92,4 +94,44 @@
     <string name="camera_permission_required">Este necesară permisiunea pentru cameră</string>
     <string name="couldnt_take_photo">Nu am putut deschide camera pentru a face poza</string>
     <string name="storage_permission_required">Este necesară permisiunea pentru stocare</string>
+    <string name="confirm">Confirmă</string>
+    <string name="waiting_for_gps_placeholder">Așteptând GPS...</string>
+
+
+
+    <!-- String-uri pentru LocationDialogFragment cu acuratețe în timp real -->
+
+    <!-- Statusuri de căutare locație -->
+    <string name="searching_location">Se caută locația…</string>
+    <string name="searching_gps_signal">Se caută semnal GPS…</string>
+    <string name="searching_location_countdown">Se caută locația… %d</string>
+    <string name="improving_accuracy_countdown">Se îmbunătățește acuratețea… %d</string>
+
+    <!-- Butoane de confirmare -->
+    <string name="confirm_location">Confirmă locația</string>
+    <string name="confirm_location_low_accuracy">Confirmă (acuratețe scăzută)</string>
+    <string name="confirm_without_location">Închide</string>
+
+    <!-- Mesaje de acuratețe GPS -->
+    <string name="gps_accuracy_display">Acuratețe GPS: %d metri</string>
+
+    <!-- Mesaje pentru GPS -->
+    <string name="gps_required_message">GPS-ul trebuie să fie activ pentru această funcție</string>
+    <string name="gps_activation_error">Eroare la activarea GPS-ului</string>
+    <string name="gps_activation_failed">Nu s-a putut activa GPS-ul</string>
+
+    <!-- Mesaje pentru activarea/dezactivarea GPS -->
+    <string name="gps_activated_title">GPS activat</string>
+    <string name="gps_activate_message">GPS-ul a fost activat pentru această funcție. Dorești să îl dezactivezi acum pentru a economisi bateria?</string>
+    <string name="yes_disable">Da, dezactivează</string>
+    <string name="no_keep_active">Nu, păstrează activ</string>
+    <string name="cannot_open_location_settings">Nu s-au putut deschide setările de locație</string>
+
+    <!-- Mesaje de eroare -->
+    <string name="location_permission_required">Permisiunea pentru locație este necesară pentru această funcție</string>
+    <string name="location_timeout">Timeout la obținerea locației. Încearcă din nou.</string>
+    <string name="security_error_location">Eroare de securitate la accesarea locației</string>
+
+    <!-- Mesaje pentru versiuni Android -->
+    <string name="android_version_not_supported">Această funcție necesită Android 10 sau o versiune mai nouă</string>
 </resources>

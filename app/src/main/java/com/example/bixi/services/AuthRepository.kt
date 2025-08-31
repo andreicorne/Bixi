@@ -10,10 +10,17 @@ object AuthRepository {
             val response = RetrofitClient.login(LoginRequest(username, password))
 
             if (response.success && response.data != null) {
+
                 val user = response.data
                 AppSession.user = user
 
                 RetrofitClient.saveTokens(user.access_token, user.refresh_token)
+
+                val responseEmployee = RetrofitClient.getEmployees()
+                if (responseEmployee.success && responseEmployee.data != null){
+                    AppSession.employees = responseEmployee.data
+                }
+
                 Result.success(true)
             } else {
                 Result.failure(Exception("Login failed"))

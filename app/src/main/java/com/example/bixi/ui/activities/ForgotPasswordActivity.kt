@@ -1,24 +1,16 @@
-package com.example.bixi.activities
+package com.example.bixi.ui.activities
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.example.bixi.AppSession
-import com.example.bixi.R
-import com.example.bixi.constants.StorageKeys
+import androidx.lifecycle.Observer
 import com.example.bixi.databinding.ActivityForgotPasswordBinding
-import com.example.bixi.databinding.ActivityLoginBinding
+import com.example.bixi.enums.FieldType
 import com.example.bixi.helper.LocaleHelper
-import com.example.bixi.services.JsonConverterService
-import com.example.bixi.services.SecureStorageService
+import com.example.bixi.helper.ResponseStatusHelper
+import com.example.bixi.helper.ValidatorHelper
 import com.example.bixi.viewModels.ForgotPasswordViewModel
-import com.example.bixi.viewModels.LoginViewModel
 
 class ForgotPasswordActivity : BaseActivity() {
 
@@ -39,29 +31,31 @@ class ForgotPasswordActivity : BaseActivity() {
 
         setupViewModel()
         initListeners()
+        setupBindings()
+        setupInputValidations()
+    }
+
+    private fun setupBindings(){
+        binding.tlEmail.bindTo(viewModel::setEmail)
+    }
+
+    private fun setupInputValidations(){
+        binding.tlEmail.setValidators(ValidatorHelper.getValidatorsFor(FieldType.EMAIL))
     }
 
     private fun initListeners(){
         binding.topAppBar.setNavigationOnClickListener {
             finish()
         }
+        binding.resetPasswordButton.setOnClickListener {
+            viewModel.forgotPassword()
+        }
     }
 
     private fun setupViewModel(){
-
-        binding.resetPasswordButton.setOnClickListener {
-            viewModel.forgotPassword(binding.etEmail.text.toString())
-        }
-
-        viewModel.apiResult.observe(this) { success ->
-            if (success) {
-                showLoading(false, {
-                    Toast.makeText(this, getString(R.string.server_forgot_password_success), Toast.LENGTH_SHORT).show()
-                })
-            } else {
-                Toast.makeText(this, getString(R.string.server_error_generic_message), Toast.LENGTH_SHORT).show()
-                showLoading(false)
-            }
-        }
+        viewModel.sendResponseCode.observe(this, Observer { statusCode ->
+            ResponseStatusHelper.showStatusMessage(this, statusCode)
+            showLoading(false)
+        })
     }
 }

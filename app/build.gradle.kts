@@ -3,6 +3,9 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("kotlin-kapt")
     id("kotlin-parcelize")
+    alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.google.firebase.crashlytics)
+    alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
 }
 
 android {
@@ -10,7 +13,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.bixi"
+        applicationId = "com.bixi.be"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
@@ -54,6 +57,8 @@ dependencies {
     implementation(libs.androidx.legacy.support.v4)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.annotation)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.play.services.maps)
     kapt("com.github.bumptech.glide:compiler:4.16.0")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
@@ -67,6 +72,8 @@ dependencies {
     implementation ("androidx.preference:preference:1.2.1")
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation(libs.okhttp)
+    implementation(libs.play.services.location)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

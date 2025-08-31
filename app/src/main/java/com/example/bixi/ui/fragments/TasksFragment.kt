@@ -1,4 +1,4 @@
-package com.example.bixi.fragments
+package com.example.bixi.ui.fragments
 
 import android.app.Activity
 import android.content.Intent
@@ -14,15 +14,23 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
 import com.example.bixi.R
 import com.example.bixi.databinding.FragmentTasksBinding
 import com.example.bixi.viewModels.TasksViewModel
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.bixi.activities.MainActivity
-import com.example.bixi.activities.TaskDetailsActivity
-import com.example.bixi.adapters.TaskListAdapter
+import com.example.bixi.AppSession
+import com.example.bixi.ui.activities.MainActivity
+import com.example.bixi.ui.activities.TaskDetailsActivity
+import com.example.bixi.ui.adapters.TaskListAdapter
 import com.example.bixi.constants.NavigationConstants
+import com.example.bixi.constants.StorageKeys
+import com.example.bixi.enums.TaskActionType
 import com.example.bixi.enums.TaskStatus
+import com.example.bixi.helper.ApiStatus
+import com.example.bixi.helper.ResponseStatusHelper
+import com.example.bixi.services.JsonConverterService
+import com.example.bixi.services.SecureStorageService
 
 class TasksFragment : Fragment() {
 
@@ -74,10 +82,16 @@ class TasksFragment : Fragment() {
             showLoading(isLoading)
         }
 
-        viewModel.serverStatusResponse.observe(viewLifecycleOwner) { success ->
-            if (!success) {
-                Toast.makeText(context, "Eroare", Toast.LENGTH_SHORT).show()
-            }
+        viewModel.sendResponseCode.observe(viewLifecycleOwner) { statusCode ->
+//            if(ApiStatus.fromCode(statusCode) == ApiStatus.SERVER_SUCCESS){
+//                AppSession.user!!.user.password = viewModel.password.value
+//                SecureStorageService.putString(this, StorageKeys.USER_TOKEN, JsonConverterService.toJson(AppSession.user))
+//                val intent = Intent(this, MainActivity::class.java)
+//                startActivity(intent)
+//                return@Observer
+//            }
+
+            ResponseStatusHelper.showStatusMessage(requireContext(), statusCode)
             showLoading(false)
         }
 
@@ -96,12 +110,16 @@ class TasksFragment : Fragment() {
     private fun setupResultLauncher(){
         taskResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                val taskCreated = result.data?.getBooleanExtra(NavigationConstants.TASK_NAVIGATION_BACK, false) ?: false
-                if (taskCreated) {
-                    Toast.makeText(requireContext(), getString(R.string.successfully_created), Toast.LENGTH_SHORT).show()
-//                    viewModel.setStatus(TaskStatus.NEW)
-                    binding.bottomNavigation.selectedItemId = R.id.menu_new
-                } else {
+                val taskActionReturnType = result.data?.getIntExtra(NavigationConstants.TASK_NAVIGATION_BACK,
+                    TaskActionType.EMPTY.ordinal) ?: false
+                when(taskActionReturnType){
+                    TaskActionType.CREATE.ordinal -> {
+                        binding.bottomNavigation.selectedItemId = R.id.menu_new
+                    }
+                    TaskActionType.DELETE.ordinal,
+                    TaskActionType.EDIT.ordinal -> {
+                        viewModel.getList(viewModel.selectedStatus.value)
+                    }
                 }
             }
         }
@@ -137,7 +155,7 @@ class TasksFragment : Fragment() {
             }
 
 //            it.context.startActivity(intent, options.toBundle())
-            startActivity(intent)
+            taskResultLauncher.launch(intent)
         }
         binding.recyclerView.adapter = adapterTasks
     }

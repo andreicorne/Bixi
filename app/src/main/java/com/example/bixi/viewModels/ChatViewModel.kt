@@ -1,18 +1,27 @@
 package com.example.bixi.viewModels
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bixi.enums.TaskStatus
+import com.example.bixi.helper.ApiStatus
 import com.example.bixi.models.Attachment
 import com.example.bixi.models.AttachmentType
 import com.example.bixi.models.Message
 import com.example.bixi.models.MessagePage
+import com.example.bixi.models.api.GetTasksRequest
+import com.example.bixi.services.RetrofitClient
+import com.example.bixi.services.UIMapperService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
 
 class ChatViewModel : BaseViewModel() {
+
+    var taskId: String = ""
+
     private val _messages = MutableLiveData<List<Message>>()
     val messages: LiveData<List<Message>> = _messages
 
@@ -21,6 +30,24 @@ class ChatViewModel : BaseViewModel() {
 
     private var currentPage = 0
     private val allMessages = mutableListOf<Message>()
+
+    fun loadMessage(){
+        setLoading(true)
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.getComments(taskId)
+                if (response.success) {
+//                    _messages.value = UIMapperService.mapToUiTaskList(response.data!!)
+                }
+
+                _sendResponseCode.postValue(response.statusCode)
+
+            } catch (e: Exception) {
+                Log.e("API", "Exception: ${e.message}")
+                _sendResponseCode.postValue(ApiStatus.SERVER_ERROR.code)
+            }
+        }
+    }
 
     fun loadMessages() {
         if (isLoading.value == true) return

@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.example.bixi",
+  "applicationId": "com.bixi.be",
   "variantName": "release",
   "elements": [
     {

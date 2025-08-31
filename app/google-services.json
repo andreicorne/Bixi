@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "55170120014",
+    "project_id": "bixi-1a866",
+    "storage_bucket": "bixi-1a866.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:55170120014:android:7f7206b1fde901dbba461f",
+        "android_client_info": {
+          "package_name": "com.bixi.be"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0k88vOD-5FyOw-YfxGeYUj_BlVNA0ODU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
