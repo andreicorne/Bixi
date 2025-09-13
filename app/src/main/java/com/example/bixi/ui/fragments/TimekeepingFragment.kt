@@ -111,7 +111,7 @@ class TimekeepingFragment : Fragment() {
             ResponseStatusHelper.showStatusMessage(requireContext(), statusCode)
 
             if(ApiStatus.fromCode(statusCode) != ApiStatus.SERVER_SUCCESS){
-                binding.swAction.isChecked = !binding.swAction.isChecked
+//                binding.swAction.isChecked = !binding.swAction.isChecked
                 return@observe
             }
         }

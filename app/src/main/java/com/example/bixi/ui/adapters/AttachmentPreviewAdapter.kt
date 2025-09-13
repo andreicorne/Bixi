@@ -15,12 +15,12 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.Priority
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.bixi.R
-import com.example.bixi.models.Attachment
-import com.example.bixi.models.AttachmentType
+import com.example.bixi.enums.AttachmentType
+import com.example.bixi.models.AttachmentHandler
 
 class AttachmentPreviewAdapter(
-    private val onRemoveClick: (Attachment) -> Unit
-) : ListAdapter<Attachment, AttachmentPreviewAdapter.PreviewViewHolder>(AttachmentDiffCallback()) {
+    private val onRemoveClick: (AttachmentHandler) -> Unit
+) : ListAdapter<AttachmentHandler, AttachmentPreviewAdapter.PreviewViewHolder>(AttachmentDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PreviewViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -34,7 +34,7 @@ class AttachmentPreviewAdapter(
 
     class PreviewViewHolder(
         itemView: View,
-        private val onRemoveClick: (Attachment) -> Unit
+        private val onRemoveClick: (AttachmentHandler) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
 
         private val ivPreview: ImageView = itemView.findViewById(R.id.ivPreview)
@@ -43,7 +43,7 @@ class AttachmentPreviewAdapter(
         private val tvDocumentName: TextView = itemView.findViewById(R.id.tvDocumentName)
         private val btnRemove: ImageButton = itemView.findViewById(R.id.btnRemove)
 
-        fun bind(attachment: Attachment) {
+        fun bind(attachment: AttachmentHandler) {
             btnRemove.setOnClickListener {
                 onRemoveClick(attachment)
             }
@@ -58,14 +58,13 @@ class AttachmentPreviewAdapter(
             }
         }
 
-        private fun showImagePreview(attachment: Attachment) {
+        private fun showImagePreview(attachment: AttachmentHandler) {
             ivPreview.visibility = View.VISIBLE
             documentContainer.visibility = View.GONE
 
             try {
-                val uri = Uri.parse(attachment.url)
                 Glide.with(itemView.context)
-                    .load(uri)
+                    .load(attachment.uri)
                     .transform(RoundedCorners(12))
                     .placeholder(R.drawable.ic_image)
                     .priority(Priority.HIGH)
@@ -74,7 +73,7 @@ class AttachmentPreviewAdapter(
                     .into(ivPreview)
             } catch (e: Exception) {
                 Glide.with(itemView.context)
-                    .load(attachment.url)
+                    .load(attachment.uri?.path)
                     .transform(RoundedCorners(12))
                     .placeholder(R.drawable.ic_image)
                     .priority(Priority.HIGH)
@@ -84,7 +83,7 @@ class AttachmentPreviewAdapter(
             }
         }
 
-        private fun showDocumentPreview(attachment: Attachment) {
+        private fun showDocumentPreview(attachment: AttachmentHandler) {
             ivPreview.visibility = View.GONE
             documentContainer.visibility = View.VISIBLE
 
@@ -114,12 +113,12 @@ class AttachmentPreviewAdapter(
         }
     }
 
-    class AttachmentDiffCallback : DiffUtil.ItemCallback<Attachment>() {
-        override fun areItemsTheSame(oldItem: Attachment, newItem: Attachment): Boolean {
+    class AttachmentDiffCallback : DiffUtil.ItemCallback<AttachmentHandler>() {
+        override fun areItemsTheSame(oldItem: AttachmentHandler, newItem: AttachmentHandler): Boolean {
             return oldItem.id == newItem.id
         }
 
-        override fun areContentsTheSame(oldItem: Attachment, newItem: Attachment): Boolean {
+        override fun areContentsTheSame(oldItem: AttachmentHandler, newItem: AttachmentHandler): Boolean {
             return oldItem == newItem
         }
     }

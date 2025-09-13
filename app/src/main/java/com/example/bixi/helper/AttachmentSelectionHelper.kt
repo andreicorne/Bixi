@@ -11,8 +11,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.example.bixi.R
-import com.example.bixi.models.Attachment
-import com.example.bixi.models.AttachmentType
+import com.example.bixi.enums.AttachmentType
+import com.example.bixi.models.AttachmentHandler
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.io.File
 import java.text.SimpleDateFormat
@@ -20,7 +20,7 @@ import java.util.*
 
 class AttachmentSelectionHelper(
     private val activity: ComponentActivity,
-    private val onAttachmentsSelected: (List<Attachment>) -> Unit
+    private val onAttachmentsSelected: (List<AttachmentHandler>) -> Unit
 ) {
 
     private var photoFile: File? = null
@@ -156,9 +156,9 @@ class AttachmentSelectionHelper(
             val fileName = getFileName(uri) ?: "image_${System.currentTimeMillis()}.jpg"
             val fileSize = getFileSize(uri)
 
-            Attachment(
+            AttachmentHandler(
                 id = UUID.randomUUID().toString(),
-                url = uri.toString(),
+                uri = uri,
                 type = AttachmentType.IMAGE,
                 name = fileName,
                 size = fileSize
@@ -180,9 +180,9 @@ class AttachmentSelectionHelper(
             else -> AttachmentType.DOCUMENT
         }
 
-        val attachment = Attachment(
+        val attachment = AttachmentHandler(
             id = UUID.randomUUID().toString(),
-            url = uri.toString(),
+            uri = uri,
             type = attachmentType,
             name = fileName,
             size = fileSize

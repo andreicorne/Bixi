@@ -12,9 +12,8 @@ object AppSession {
     var language: String = "ro"
 
     fun clear() {
+        employees = null
         user = null
         token = null
-        isDarkMode = false
-        language = "ro"
     }
 }

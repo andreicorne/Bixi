@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.bixi.AppSession
 import com.example.bixi.enums.AttachmentType
 import com.example.bixi.enums.TaskViewMode
 import com.example.bixi.helper.ApiStatus
@@ -56,13 +57,14 @@ class TaskDetailsViewModel : BaseViewModel() {
     private val _checks = MutableLiveData<List<CheckItem>>(emptyList())
     val checks: LiveData<List<CheckItem>> = _checks
 
+    private val _removedFileIds = mutableListOf<String>()
+    val removedFileIds: List<String> get() = _removedFileIds
+
     init {
-        _responsibles.value = listOf("Marius", "Cosmin", "Flavius")
+        _responsibles.value = AppSession.employees?.map { "${it.firstName} ${it.lastName}" } ?: emptyList()
     }
 
     fun getData(){
-        _responsibles.value = listOf("Marius", "Cosmin", "Flavius")
-
         setLoading(true)
         viewModelScope.launch {
             try {
@@ -73,8 +75,7 @@ class TaskDetailsViewModel : BaseViewModel() {
                     _title.value = task.title
                     _description.value = UIMapperService.fromHtmlToPlainText(task.description)
 
-                    //TODO: reset. need from server
-                    _responsible.value = 1
+                    _responsible.value = AppSession.employees?.indexOfFirst { it.id == task.assigneeId } ?: 0
 
                     setEndDateTimeFromServer(task.endDate)
                     setStartDateTimeFromServer(task.startDate)
@@ -84,7 +85,7 @@ class TaskDetailsViewModel : BaseViewModel() {
                         CheckItem(text = item.text, done = item.done, id = UUID.randomUUID().toString(), shouldDisplayDragHandle = isMoreThanOneChecks)
                     }
 
-                    _attachments.value = mapAttachmentsFromServer(task.attachments)
+                    _attachments.value = UIMapperService.mapAttachmentsFromServer(task.attachments, true)
 
                     originalData = TaskUIData(title.value!!, description.value!!, startDateTime.value!!, endDateTime.value!!,
                         attachments.value!!, responsible.value, checks.value!!)
@@ -158,34 +159,7 @@ class TaskDetailsViewModel : BaseViewModel() {
 
         _checks.value = originalData!!.checks
         _attachments.value = originalData!!.attachments
-
-        // TODO: set the original responsible
-    }
-
-    private fun mapAttachmentsFromServer(serverAttachments: List<AttachmentResponse>): List<AttachmentItem> {
-        val mappedAttachments = serverAttachments.map { serverAttachment ->
-            val fullUrl = "https://api.bixi.be/uploads/${serverAttachment.fileUrl}"
-            val uri = Uri.parse(fullUrl)
-
-            val attachmentType = when {
-                serverAttachment.type.startsWith("image/") -> AttachmentType.IMAGE
-                serverAttachment.type.contains("pdf") -> AttachmentType.DOCUMENT
-                serverAttachment.type.contains("word") -> AttachmentType.DOCUMENT
-                else -> AttachmentType.DOCUMENT
-            }
-
-            AttachmentItem(
-                uri = uri,
-                type = attachmentType,
-                serverData = serverAttachment,
-                false
-            )
-        }.toMutableList()
-
-        // Adaugă un item gol pentru noi attachments la sfârșit
-        mappedAttachments.add(AttachmentItem())
-
-        return mappedAttachments
+        clearRemovedFileIds()
     }
 
     fun setTitle(newTitle: String) {
@@ -297,12 +271,24 @@ class TaskDetailsViewModel : BaseViewModel() {
         }
     }
 
+    fun addRemovedFileId(fileId: String) {
+        if (!_removedFileIds.contains(fileId)) {
+            _removedFileIds.add(fileId)
+        }
+    }
+
+    fun clearRemovedFileIds() {
+        _removedFileIds.clear()
+    }
+
     /**
      * Șterge un atașament la un index specificat
      */
     fun removeAttachmentAt(index: Int) {
         val currentList = _attachments.value?.toMutableList() ?: return
         if (index !in currentList.indices) return
+
+        addRemovedFileId(currentList[index].id)
 
         currentList.removeAt(index)
 

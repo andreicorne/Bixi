@@ -9,7 +9,7 @@ open class BaseViewModel : ViewModel() {
     protected val _sendResponseCode = MutableLiveData<Int>()
     val sendResponseCode: LiveData<Int> = _sendResponseCode
 
-    private val _isLoading = MutableLiveData<Boolean>()
+    protected val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> get() = _isLoading
 
     protected fun setLoading(value: Boolean) {

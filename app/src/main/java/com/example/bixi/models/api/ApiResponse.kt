@@ -5,7 +5,7 @@ data class ApiResponse<T>(
     val statusCode: Int,
     val data: T?,
     val message: String? = null,
-    val total: Int? = null,
-    val page: Int? = null,
-    val pageSize: Int? = null
+    val total: String? = null,
+    val page: String? = null,
+    val pageSize: String? = null
 )

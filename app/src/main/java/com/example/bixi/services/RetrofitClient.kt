@@ -5,6 +5,7 @@ import com.example.bixi.interfaces.AuthApi
 import com.example.bixi.models.api.ApiResponse
 import com.example.bixi.models.api.AttendanceRequest
 import com.example.bixi.models.api.CommentResponse
+import com.example.bixi.models.api.CreateCommentRequest
 import com.example.bixi.models.api.CreateTaskRequest
 import com.example.bixi.models.api.EditTaskRequest
 import com.example.bixi.models.api.EmployeeResponse
@@ -141,7 +142,7 @@ object RetrofitClient {
         return handleApiCall { instance.getTasks(parameter, bearerToken) }
     }
 
-    suspend fun getComments(taskId: String): ApiResponse<List<CommentResponse>> {
+    suspend fun getComments(taskId: String, pageSize: Int, page: Int): ApiResponse<List<CommentResponse>> {
         // Verifică și refresh token dacă este necesar
         val validToken = ensureValidToken()
 
@@ -151,7 +152,35 @@ object RetrofitClient {
         }
 
         val bearerToken = "Bearer $validToken"
-        return handleApiCall { instance.getComments(taskId,bearerToken) }
+        return handleApiCall { instance.getComments(taskId, pageSize.toString(), page.toString(),bearerToken) }
+    }
+
+    suspend fun sendComment(
+        taskId: String,
+        parameter: CreateCommentRequest,
+        attachments: List<MultipartBody.Part>): ApiResponse<CommentResponse> {
+        // Verifică și refresh token dacă este necesar
+        val validToken = ensureValidToken()
+
+        if (validToken == null) {
+            // Token invalid sau refresh a eșuat
+            return ApiResponse(false, -1, null)
+        }
+
+        val mediaType = "text/plain".toMediaTypeOrNull()
+        val messageBody = parameter.message.toRequestBody(mediaType)
+        val authorIdBody = parameter.authorId.toRequestBody(mediaType)
+//        val authorNameBody = parameter.authorName?.toRequestBody(mediaType)
+        val authorEntityTypeBody = parameter.authorEntityType.toRequestBody(mediaType)
+
+        val bearerToken = "Bearer $validToken"
+        return handleApiCall { instance.sendComment(
+            taskId,
+            messageBody,
+            authorIdBody,
+            authorEntityTypeBody,
+            attachments,
+            bearerToken) }
     }
 
     suspend fun getTaskById(taskId: String): ApiResponse<TaskDetailsResponse> {
@@ -199,7 +228,10 @@ object RetrofitClient {
             checkListBody, assigneeBody, startDateBody, endDateBody, attachments, bearerToken) }
     }
 
-    suspend fun editTask(parameter: EditTaskRequest, attachments: List<MultipartBody.Part>): ApiResponse<Any> {
+    suspend fun editTask(
+        parameter: EditTaskRequest,
+        attachments: List<MultipartBody.Part>,
+        removedFileIds: List<String>): ApiResponse<Any> {
         // Verifică și refresh token dacă este necesar
         val validToken = ensureValidToken()
 
@@ -210,15 +242,19 @@ object RetrofitClient {
 
         val mediaType = "text/plain".toMediaTypeOrNull()
         val titleBody = parameter.title.toRequestBody(mediaType)
-//        val assigneeBody = parameter.assigneeId.toRequestBody(mediaType)
+        val assigneeBody = parameter.assigneeId.toRequestBody(mediaType)
         val startDateBody = parameter.startDate.toRequestBody(mediaType)
         val endDateBody = parameter.endDate.toRequestBody(mediaType)
         val descriptionBody = parameter.description.toRequestBody(mediaType)
         val checkListBody = parameter.checklist.toRequestBody(mediaType)
 
+        val removedFileParts = removedFileIds.map { id ->
+            MultipartBody.Part.createFormData("removedFileIds", id)
+        }
+
         val bearerToken = "Bearer $validToken"
         return handleApiCall { instance.editTask(parameter.id,titleBody, descriptionBody, checkListBody,
-            startDateBody, endDateBody ,attachments, bearerToken) }
+            assigneeBody,startDateBody, endDateBody ,attachments, removedFileParts, bearerToken) }
     }
 
     suspend fun delete(taskId: String): ApiResponse<Any> {

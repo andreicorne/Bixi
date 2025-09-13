@@ -3,24 +3,25 @@ package com.example.bixi.viewModels
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bixi.enums.TaskStatus
 import com.example.bixi.helper.ApiStatus
-import com.example.bixi.models.Attachment
-import com.example.bixi.models.AttachmentType
+import com.example.bixi.models.AttachmentHandler
 import com.example.bixi.models.Message
-import com.example.bixi.models.MessagePage
-import com.example.bixi.models.api.GetTasksRequest
+import com.example.bixi.models.api.CommentResponse
 import com.example.bixi.services.RetrofitClient
 import com.example.bixi.services.UIMapperService
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.*
 
 class ChatViewModel : BaseViewModel() {
 
     var taskId: String = ""
+    private val pageSize = 15 // NumÄƒrul de comentarii pe paginÄƒ
+    private var currentPage = 1 // Pagina curentÄƒ (Ã®ncepe de la 1)
+    private var isLoadingMore = false
+    var shouldScrollToNewMessage: Boolean = false
+
+    private val _attachments = MutableLiveData<List<AttachmentHandler>>(mutableListOf())
+    val attachments: LiveData<List<AttachmentHandler>> = _attachments
 
     private val _messages = MutableLiveData<List<Message>>()
     val messages: LiveData<List<Message>> = _messages
@@ -28,16 +29,20 @@ class ChatViewModel : BaseViewModel() {
     private val _hasMore = MutableLiveData<Boolean>(true)
     val hasMore: LiveData<Boolean> = _hasMore
 
-    private var currentPage = 0
-    private val allMessages = mutableListOf<Message>()
-
     fun loadMessage(){
         setLoading(true)
+        currentPage = 1 // Reset la pagina 1 pentru Ã®ncÄƒrcarea iniÈ›ialÄƒ
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.getComments(taskId)
+                val response = RetrofitClient.getComments(taskId, pageSize, currentPage)
                 if (response.success) {
-//                    _messages.value = UIMapperService.mapToUiTaskList(response.data!!)
+                    val newMessages = UIMapperService.mapCommentsFromServer(response.data!!, false)
+                    _messages.value = newMessages
+
+                    // VerificÄƒ dacÄƒ mai sunt comentarii (dacÄƒ numÄƒrul returnat este egal cu pageSize)
+                    _hasMore.value = newMessages.size == pageSize
+                } else {
+                    _hasMore.value = false
                 }
 
                 _sendResponseCode.postValue(response.statusCode)
@@ -45,28 +50,7 @@ class ChatViewModel : BaseViewModel() {
             } catch (e: Exception) {
                 Log.e("API", "Exception: ${e.message}")
                 _sendResponseCode.postValue(ApiStatus.SERVER_ERROR.code)
-            }
-        }
-    }
-
-    fun loadMessages() {
-        if (isLoading.value == true) return
-
-        viewModelScope.launch {
-            setLoading(true)
-
-            try {
-                // Simulate API call
-                delay(1000)
-
-                val newMessages = fetchMessagesFromServer(0)
-                allMessages.clear()
-                allMessages.addAll(newMessages.messages)
-                _messages.value = allMessages.toList()
-                _hasMore.value = newMessages.hasNext
-                currentPage = 0
-            } catch (e: Exception) {
-                // Handle error
+                _hasMore.value = false
             } finally {
                 setLoading(false)
             }
@@ -74,134 +58,75 @@ class ChatViewModel : BaseViewModel() {
     }
 
     fun loadMoreMessages() {
-        if (isLoading.value == true || _hasMore.value == false) return
+        if (isLoadingMore || !_hasMore.value!! || _isLoading.value!!) {
+            return
+        }
+
+        isLoadingMore = true
+        currentPage++ // IncrementeazÄƒ la urmÄƒtoarea paginÄƒ
 
         viewModelScope.launch {
-            setLoading(true)
-
             try {
-                // Simulate API call
-                delay(1000)
+                val response = RetrofitClient.getComments(taskId, pageSize, currentPage)
+                if (response.success) {
+                    val newMessages = UIMapperService.mapCommentsFromServer(response.data!!, false)
 
-                val nextPage = currentPage + 1
-                val newMessages = fetchMessagesFromServer(nextPage)
-                allMessages.addAll(newMessages.messages)
-                _messages.value = allMessages.toList()
-                _hasMore.value = newMessages.hasNext
-                currentPage = nextPage
-            } catch (e: Exception) {
-                // Handle error
-            } finally {
-                setLoading(false)
-            }
-        }
-    }
+                    if (newMessages.isNotEmpty()) {
+                        // AdaugÄƒ noile mesaje la sfÃ¢rÈ™itul listei existente
+                        val currentList = _messages.value?.toMutableList() ?: mutableListOf()
+                        currentList.addAll(newMessages)
+                        _messages.value = currentList
 
-    fun sendMessage(text: String, attachments: List<Attachment> = emptyList()) {
-        viewModelScope.launch {
-            val newMessage = Message(
-                id = UUID.randomUUID().toString(),
-                text = text,
-                timestamp = Date(),
-                attachments = attachments,
-                isFromCurrentUser = true
-            )
-
-            // Add message optimistically
-            allMessages.add(0, newMessage)
-            _messages.value = allMessages.toList()
-
-            // Simulate sending to server
-            try {
-                delay(500)
-                // API call to send message with attachments
-                // Here you would upload the attachments first, then send the message
-                uploadAttachments(attachments)
-            } catch (e: Exception) {
-                // Handle error - remove message or show retry
-                allMessages.removeAt(0)
-                _messages.value = allMessages.toList()
-            }
-        }
-    }
-
-    private suspend fun uploadAttachments(attachments: List<Attachment>) {
-        // Simulate attachment upload
-        attachments.forEach { attachment ->
-            delay(200) // Simulate upload time per attachment
-            // Here you would upload each attachment to your server
-            // and update the attachment URL with the server URL
-        }
-    }
-
-    // Simulate server response - replace with actual API call
-    private fun fetchMessagesFromServer(page: Int): MessagePage {
-        val messagesPerPage = 20
-        val totalMessages = 100
-        val start = page * messagesPerPage
-        val end = minOf(start + messagesPerPage, totalMessages)
-
-        val messages = (start until end).map { index ->
-            val attachments = when {
-                index % 8 == 0 -> listOf(
-                    Attachment(
-                        id = "att_img_$index",
-                        url = "https://picsum.photos/400/300?random=$index",
-                        type = AttachmentType.IMAGE,
-                        name = "image_$index.jpg",
-                        size = 1024 * 200
-                    )
-                )
-                index % 12 == 0 -> listOf(
-                    Attachment(
-                        id = "att_doc_$index",
-                        url = "https://example.com/document$index.pdf",
-                        type = AttachmentType.DOCUMENT,
-                        name = "Document_$index.pdf",
-                        size = 1024 * 500
-                    )
-                )
-                index % 15 == 0 -> listOf(
-                    Attachment(
-                        id = "att_img1_$index",
-                        url = "https://picsum.photos/400/300?random=${index}a",
-                        type = AttachmentType.IMAGE,
-                        name = "image1_$index.jpg",
-                        size = 1024 * 180
-                    ),
-                    Attachment(
-                        id = "att_img2_$index",
-                        url = "https://picsum.photos/400/300?random=${index}b",
-                        type = AttachmentType.IMAGE,
-                        name = "image2_$index.jpg",
-                        size = 1024 * 220
-                    )
-                )
-                else -> emptyList()
-            }
-
-            Message(
-                id = "msg_$index",
-                text = if (attachments.isNotEmpty()) {
-                    when {
-                        attachments.size > 1 -> "In mesajul asta am trimis niste poze"
-                        attachments.first().type == AttachmentType.IMAGE -> "Iti trimit poza asta"
-                        else -> "Aici iti trimit documentul"
+                        // VerificÄƒ dacÄƒ mai sunt comentarii de Ã®ncÄƒrcat
+                        _hasMore.value = newMessages.size == pageSize
+                    } else {
+                        _hasMore.value = false
                     }
                 } else {
-                    "Mesaj $index: Mesaj simplu aici. Ii un simplu mesaj, fara continut special"
-                },
-                timestamp = Date(System.currentTimeMillis() - (index * 60000)),
-                attachments = attachments,
-                isFromCurrentUser = index % 3 == 0
-            )
-        }
+                    Log.e("API", "Load more failed: ${response.statusCode}")
+                    _hasMore.value = false
+                    currentPage-- // Revenire la pagina anterioarÄƒ Ã®n caz de eroare
+                }
 
-        return MessagePage(
-            messages = messages,
-            currentPage = page,
-            totalPages = (totalMessages + messagesPerPage - 1) / messagesPerPage,
-            hasNext = end < totalMessages
-        )
+            } catch (e: Exception) {
+                Log.e("API", "Exception loading more: ${e.message}")
+                _hasMore.value = false
+                currentPage-- // Revenire la pagina anterioarÄƒ Ã®n caz de eroare
+            } finally {
+                isLoadingMore = false
+            }
+        }
+    }
+
+    fun addMessageToListFromServer(comment: CommentResponse){
+        shouldScrollToNewMessage = true
+        val commentsForUI = UIMapperService.mapCommentsFromServer(listOf(comment), false)
+        val currentList = _messages.value?.toMutableList() ?: mutableListOf()
+        commentsForUI.forEach { message ->
+            currentList.add(0, message)
+        }
+        _messages.value = currentList
+    }
+
+    fun addAttachment(item: AttachmentHandler) {
+        val currentList = _attachments.value?.toMutableList() ?: mutableListOf()
+        currentList.add(item)
+        _attachments.value = currentList
+    }
+
+    fun clearAttachments() {
+        _attachments.value = mutableListOf()
+    }
+
+    fun removeAttachment(item: AttachmentHandler) {
+        val currentList = _attachments.value?.toMutableList() ?: return
+        currentList.remove(item)
+        _attachments.value = currentList
+    }
+
+    fun removeAttachmentById(id: String) {
+        val currentList = _attachments.value?.toMutableList() ?: return
+        currentList.removeAll { it.id == id }
+        _attachments.value = currentList
     }
 }

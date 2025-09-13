@@ -44,8 +44,8 @@ class LoginActivity : BaseActivity() {
         setupClickListeners()
         setStyles()
 
-        viewModel.setEmail("info+test@extravel.be")
-        viewModel.setPassword("dcttest123")
+//        viewModel.setEmail("info+test@extravel.be")
+//        viewModel.setPassword("dcttest123")
     }
 
     private fun setupBindings(){

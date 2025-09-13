@@ -1,5 +1,6 @@
 package com.example.bixi.ui.activities
 
+import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -17,18 +18,28 @@ import com.example.bixi.services.AuthRepository
 import com.example.bixi.services.JsonConverterService
 import com.example.bixi.services.RetrofitClient
 import com.example.bixi.services.SecureStorageService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-class SplashActivity : AppCompatActivity() {
+class SplashActivity : Activity() {
+
+    private val job = Job()
+    private val scope = CoroutineScope(Dispatchers.Main + job)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_splash)
+//        setContentView(R.layout.activity_splash)
 
         applyDefaultsIfFirstLaunch()
         navigateToFirstScreen()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
     }
 
     private fun navigateToFirstScreen(){
@@ -43,7 +54,7 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun performAutoLogin() {
-        lifecycleScope.launch {
+        scope.launch {
             val username = AppSession.user?.user?.username
             val password = AppSession.user?.user?.password
 
@@ -53,7 +64,6 @@ class SplashActivity : AppCompatActivity() {
             }
 
             val result = AuthRepository.login(username, password)
-
             if (result.isSuccess) {
                 AppSession.user!!.user.password = password
                 navigateToHome()

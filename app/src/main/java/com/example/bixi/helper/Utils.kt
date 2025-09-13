@@ -1,5 +1,12 @@
 package com.example.bixi.helper
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
+import com.example.bixi.models.AttachmentItem
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -27,5 +34,43 @@ object Utils {
         val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
         calendar.time = isoFormat.parse(isoString) ?: Date()
         return calendar
+    }
+
+    fun prepareAttachments(
+        context: Context,
+        attachments: List<AttachmentItem>
+    ): List<MultipartBody.Part> {
+        return attachments.mapNotNull { attachment ->
+            val bytes = attachment.uri?.let { uriToByteArray(context, it) } ?: return@mapNotNull null
+            val requestBody = bytes.toRequestBody("application/octet-stream".toMediaTypeOrNull())
+            MultipartBody.Part.createFormData(
+                name = "attachments",
+                filename = getFileName(context, attachment.uri!!),
+                body = requestBody
+            )
+        }
+    }
+
+    private fun uriToByteArray(context: Context, uri: Uri): ByteArray? {
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                input.readBytes()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun getFileName(context: Context, uri: Uri): String {
+        var result = "Document"
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0) result = it.getString(index)
+            }
+        }
+        return result
     }
 }

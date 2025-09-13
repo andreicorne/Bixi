@@ -9,7 +9,6 @@ data class AttachmentItem(
     var uri: Uri? = null,
     var type: AttachmentType = AttachmentType.UNKNOWN,
     var serverData: AttachmentResponse? = null,
-    var isFromStorage: Boolean = true
-){
-    val id: UUID = UUID.randomUUID()
-}
+    var isFromStorage: Boolean = true,
+    var id: String = UUID.randomUUID().toString()
+)

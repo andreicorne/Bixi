@@ -27,6 +27,7 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface AuthApi {
     @POST("auth/mobile-login")
@@ -61,14 +62,26 @@ interface AuthApi {
         @Path("taskId") taskId: String,
         @Part("title") title: RequestBody,
         @Part("description") description: RequestBody,
-//        @Part("creatorId") creatorId: RequestBody,
         @Part("checklist") checklist: RequestBody,
-//        @Part("assigneeId") assigneeId: RequestBody,
+        @Part("assigneeId") assigneeId: RequestBody,
         @Part("startDate") startDate: RequestBody,
         @Part("endDate") endDate: RequestBody,
         @Part attachments: List<MultipartBody.Part>,
+        @Part removedFileIds: List<MultipartBody.Part>,
         @Header("Authorization") authorization: String
     ): Response<ApiResponse<Any>>
+
+    @Multipart
+    @POST("hr/mobile-tasks/{taskId}/comments")
+    suspend fun sendComment(
+        @Path("taskId") taskId: String,
+        @Part("message") message: RequestBody,
+        @Part("authorId") authorId: RequestBody,
+//        @Part("authorName") description: RequestBody,
+        @Part("authorEntityType") authorEntityType: RequestBody,
+        @Part attachments: List<MultipartBody.Part>,
+        @Header("Authorization") authorization: String
+    ): Response<ApiResponse<CommentResponse>>
 
     @DELETE("hr/mobile-tasks/{taskId}")
     suspend fun delete(@Path("taskId") taskId: String,
@@ -95,7 +108,8 @@ interface AuthApi {
     @GET("hr/mobile-tasks/{taskId}/comments")
     suspend fun getComments(
         @Path("taskId") taskId: String,
-//        @Body request: GetTasksRequest,
+        @Query("pageSize") pageSize: String,
+        @Query("page") page: String,
         @Header("Authorization") authorization: String
     ): Response<ApiResponse<List<CommentResponse>>>
 }

@@ -129,7 +129,7 @@ class AttachmentViewerActivity : BaseActivity() {
         }
 
         binding.ivOpenExternal.setOnClickListener {
-            AttachmentOpenExternalHelper.open(this, AttachmentItem(attachmentUri, attachmentType,
+            AttachmentOpenExternalHelper.open(this, AttachmentItem( uri = attachmentUri, attachmentType,
                 attachmentServerData, false))
         }
     }
@@ -141,6 +141,8 @@ class AttachmentViewerActivity : BaseActivity() {
             AttachmentType.IMAGE -> {
                 loadImage()
             }
+            AttachmentType.VIDEO,
+            AttachmentType.AUDIO,
             AttachmentType.DOCUMENT -> {
                 loadDocument()
             }

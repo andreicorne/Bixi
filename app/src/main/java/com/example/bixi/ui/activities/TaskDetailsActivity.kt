@@ -4,6 +4,8 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -37,7 +39,7 @@ import com.example.bixi.databinding.ActivityTaskDetailsBinding
 import com.example.bixi.enums.FieldType
 import com.example.bixi.enums.TaskActionType
 import com.example.bixi.enums.TaskViewMode
-import com.example.bixi.helper.AttachmentConverter
+import com.example.bixi.helper.ApiStatus
 import com.example.bixi.helper.AttachmentOpenExternalHelper
 import com.example.bixi.helper.AttachmentSelectionHelper
 import com.example.bixi.helper.BackgroundStylerService
@@ -46,12 +48,15 @@ import com.example.bixi.helper.LocaleHelper
 import com.example.bixi.helper.ResponseStatusHelper
 import com.example.bixi.helper.Utils
 import com.example.bixi.helper.ValidatorHelper
+import com.example.bixi.models.AttachmentHandler
 import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.CheckItem
 import com.example.bixi.models.api.CheckItemResponse
 import com.example.bixi.models.api.CreateTaskRequest
 import com.example.bixi.models.api.EditTaskRequest
 import com.example.bixi.services.RetrofitClient
+import com.example.bixi.services.UIMapperService
+import com.example.bixi.ui.adapters.ResponsibleAdapter
 import com.example.bixi.viewModels.TaskDetailsViewModel
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
@@ -135,9 +140,9 @@ class TaskDetailsActivity : BaseActivity() {
         attachmentHelper.initialize()
     }
 
-    private fun handleAttachmentsFromHelper(attachments: List<com.example.bixi.models.Attachment>) {
+    private fun handleAttachmentsFromHelper(attachments: List<AttachmentHandler>) {
         attachments.forEach { attachment ->
-            val attachmentItem = AttachmentConverter.toAttachmentItem(attachment)
+            val attachmentItem = UIMapperService.toAttachmentItem(attachment)
             viewModel.addAttachmentBeforeLast(attachmentItem)
         }
     }
@@ -282,19 +287,21 @@ class TaskDetailsActivity : BaseActivity() {
                 val checksJson = gson.toJson(checkItemResponses)
 
                 val createTaskRequest = CreateTaskRequest(viewModel.title.value!!, viewModel.description.value,
-                    AppSession.user!!.user.id, "98112922-056b-4aa9-834b-f56004b43bc5", checksJson,
+                    AppSession.user!!.user.id, AppSession.employees?.get(viewModel.responsible.value)!!.id, checksJson,
                     Utils.calendarToUtcIsoString(viewModel.startDateTime.value!!),
                     Utils.calendarToUtcIsoString(viewModel.endDateTime.value!!))
 
-                val parts = prepareAttachments(baseContext, viewModel.attachments.value!!)
+                val parts = Utils.prepareAttachments(baseContext, viewModel.attachments.value!!)
                 val response = RetrofitClient.createTask(createTaskRequest, parts)
                 if (response.success) {
                     onSuccessfullyCreated()
                 } else {
+                    ResponseStatusHelper.showStatusMessage(applicationContext, response.statusCode)
                 }
                 showLoading(false)
 
             } catch (e: Exception) {
+                ResponseStatusHelper.showStatusMessage(applicationContext, ApiStatus.SERVER_ERROR.code)
                 showLoading(false)
                 Log.e("API", "Exception: ${e.message}")
             }
@@ -320,11 +327,12 @@ class TaskDetailsActivity : BaseActivity() {
                 val checksJson = gson.toJson(checkItemResponses)
 
                 val editTaskRequest = EditTaskRequest(viewModel.taskId,viewModel.title.value!!, viewModel.description.value!!,
+                    AppSession.employees?.get(viewModel.responsible.value)!!.id,
                     checksJson, Utils.calendarToUtcIsoString(viewModel.startDateTime.value!!),
                     Utils.calendarToUtcIsoString(viewModel.endDateTime.value!!))
 
-                val parts = prepareAttachments(baseContext, viewModel.attachments.value!!)
-                val response = RetrofitClient.editTask(editTaskRequest, parts)
+                val parts = Utils.prepareAttachments(baseContext, viewModel.attachments.value!!)
+                val response = RetrofitClient.editTask(editTaskRequest, parts, viewModel.removedFileIds)
                 if (response.success) {
                     onSuccessfullyEdited()
                 } else {
@@ -362,44 +370,6 @@ class TaskDetailsActivity : BaseActivity() {
     private fun onSuccessfullyCreated(){
         resultReturnType = TaskActionType.CREATE
         onBack()
-    }
-
-    private fun prepareAttachments(
-        context: Context,
-        attachments: List<AttachmentItem>
-    ): List<MultipartBody.Part> {
-        return attachments.mapNotNull { attachment ->
-            val bytes = attachment.uri?.let { uriToByteArray(context, it) } ?: return@mapNotNull null
-            val requestBody = bytes.toRequestBody("application/octet-stream".toMediaTypeOrNull())
-            MultipartBody.Part.createFormData(
-                name = "attachments",
-                filename = getFileName(attachment.uri!!),
-                body = requestBody
-            )
-        }
-    }
-
-    private fun getFileName(uri: Uri): String {
-        var result = "Document"
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        cursor?.use {
-            if (it.moveToFirst()) {
-                val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (index >= 0) result = it.getString(index)
-            }
-        }
-        return result
-    }
-
-    fun uriToByteArray(context: Context, uri: Uri): ByteArray? {
-        return try {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                input.readBytes()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
     }
 
     private fun showDateTimePicker(isStart: Boolean) {
@@ -540,7 +510,7 @@ class TaskDetailsActivity : BaseActivity() {
                 AttachmentOpenExternalHelper.open(this, attachment)
             }
             else{
-                val fileName = attachment.serverData?.name ?: getFileName(attachment.uri!!)
+                val fileName = attachment.serverData?.name ?: Utils.getFileName(this, attachment.uri!!)
                 when (ExtensionHelper.getExtension(fileName)){
                     "csv", "xlsx", "xls" -> AttachmentOpenExternalHelper.open(this, attachment)
                     else -> {
@@ -583,7 +553,8 @@ class TaskDetailsActivity : BaseActivity() {
         })
 
         viewModel.responsibles.observe(this) { list ->
-            val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, list)
+//            val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, list)
+            val adapter = ResponsibleAdapter(this, list)
             binding.tvResponsible.setAdapter(adapter)
         }
 
@@ -600,10 +571,11 @@ class TaskDetailsActivity : BaseActivity() {
         }
 
         viewModel.responsible.observe(this) { pos ->
-            val adapter = binding.tvResponsible.adapter
-            if (adapter != null && pos in 0 until adapter.count) {
+            val adapter = binding.tvResponsible.adapter as ResponsibleAdapter
+            if (pos in 0 until adapter.count) {
                 val item = adapter.getItem(pos)
                 binding.tvResponsible.setText(item.toString(), false)
+                adapter.selectedIndex = pos
             }
         }
 

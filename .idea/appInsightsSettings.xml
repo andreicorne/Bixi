@@ -23,9 +23,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.bixi.be" />
-                  <option name="mobileSdkAppId" value="1:55170120014:android:7f7206b1fde901dbba461f" />
-                  <option name="projectId" value="bixi-1a866" />
-                  <option name="projectNumber" value="55170120014" />
+                  <option name="mobileSdkAppId" value="1:680375049992:android:7cbe3450ac7c3ac4dc96bd" />
+                  <option name="projectId" value="bixi-82944" />
+                  <option name="projectNumber" value="680375049992" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

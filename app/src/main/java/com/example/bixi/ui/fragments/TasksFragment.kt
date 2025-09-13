@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import androidx.fragment.app.viewModels
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +20,7 @@ import com.example.bixi.R
 import com.example.bixi.databinding.FragmentTasksBinding
 import com.example.bixi.viewModels.TasksViewModel
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.bixi.AppSession
 import com.example.bixi.ui.activities.MainActivity
 import com.example.bixi.ui.activities.TaskDetailsActivity
@@ -71,9 +73,9 @@ class TasksFragment : Fragment() {
         viewModel.getList(viewModel.selectedStatus.value)
 
         binding.progressIndicator.setIndicatorColor(
-            ContextCompat.getColor(context, R.color.md_theme_error),
-            ContextCompat.getColor(context, R.color.md_theme_inversePrimary),
-            ContextCompat.getColor(context, R.color.md_theme_onPrimaryFixed)
+            ContextCompat.getColor(requireContext(), R.color.md_theme_error),
+            ContextCompat.getColor(requireContext(), R.color.md_theme_inversePrimary),
+            ContextCompat.getColor(requireContext(), R.color.md_theme_onPrimaryFixed)
         )
     }
 
@@ -83,20 +85,23 @@ class TasksFragment : Fragment() {
         }
 
         viewModel.sendResponseCode.observe(viewLifecycleOwner) { statusCode ->
-//            if(ApiStatus.fromCode(statusCode) == ApiStatus.SERVER_SUCCESS){
-//                AppSession.user!!.user.password = viewModel.password.value
-//                SecureStorageService.putString(this, StorageKeys.USER_TOKEN, JsonConverterService.toJson(AppSession.user))
-//                val intent = Intent(this, MainActivity::class.java)
-//                startActivity(intent)
-//                return@Observer
-//            }
-
             ResponseStatusHelper.showStatusMessage(requireContext(), statusCode)
             showLoading(false)
         }
 
         viewModel.tasks.observe(viewLifecycleOwner) { newList ->
-            adapterTasks.submitList(newList)
+            adapterTasks.submitList(newList){
+                if(!viewModel.shouldNavigatoToTop){
+                    return@submitList
+                }
+                viewModel.shouldNavigatoToTop = false
+                activity?.runOnUiThread {
+                    // Scroll doar la poziția 0 dacă este prima încărcare (lista goală)
+                    if (adapterTasks.itemCount <= newList.size) {
+                        binding.recyclerView.scrollToPosition(0)
+                    }
+                }
+            }
             if(newList.isEmpty()){
                 binding.ivEmpty.visibility = View.VISIBLE
                 binding.ivEmpty.startAnimation()
@@ -104,6 +109,11 @@ class TasksFragment : Fragment() {
             else{
                 binding.ivEmpty.visibility = View.GONE
             }
+        }
+
+        // Observer pentru hasMore status (opțional, pentru debugging)
+        viewModel.hasMore.observe(viewLifecycleOwner) { hasMore ->
+            Log.d("TasksFragment", "Has more tasks: $hasMore")
         }
     }
 
@@ -142,22 +152,35 @@ class TasksFragment : Fragment() {
         binding.recyclerView.layoutManager = LinearLayoutManager(activity)
 
         adapterTasks = TaskListAdapter{ position ->
-//            val options = ActivityOptions.makeSceneTransitionAnimation(
-//                it.context as Activity,
-//                holder.container, // View și tag-ul său
-//                "task_details_transition"
-//            )
-
-            val item = viewModel.tasks.value.get(position)
+            val item = viewModel.tasks.value!![position]
             // Navigăm către activitate cu animația specificată
             val intent = Intent(context, TaskDetailsActivity::class.java).apply {
                 putExtra(NavigationConstants.TASK_ID_NAV, item.id)
             }
-
-//            it.context.startActivity(intent, options.toBundle())
             taskResultLauncher.launch(intent)
         }
         binding.recyclerView.adapter = adapterTasks
+
+        // Adaugă scroll listener pentru paginare
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val totalItemCount = layoutManager.itemCount
+                val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+
+                // Verifică dacă trebuie să încarce mai multe task-uri
+                // Threshold de 5 elemente înainte de sfârșitul listei
+                if (!viewModel.isLoading.value!! &&
+                    viewModel.hasMore.value!! &&
+                    totalItemCount > 0 &&
+                    lastVisibleItem + 5 >= totalItemCount) {
+
+                    Log.d("TasksFragment", "Loading more tasks from next page...")
+                    viewModel.loadMoreTasks()
+                }
+            }
+        })
     }
 
     private fun setupEmptyTaskViewAnimation() {
@@ -195,7 +218,7 @@ class TasksFragment : Fragment() {
             R.drawable.empty_task_15,
             R.drawable.empty_task_14,
             R.drawable.empty_task_13
-            )
+        )
 
         binding.ivEmpty.addFrames(frameResources)
         binding.ivEmpty.setFrameDuration(30)

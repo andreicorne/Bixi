@@ -1,12 +1,11 @@
 package com.example.bixi.ui.adapters
 
 import android.content.Context
-import android.net.Uri
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -14,32 +13,28 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.bixi.R
-import com.example.bixi.helper.BackgroundStylerService
-import com.example.bixi.models.Attachment
-import com.example.bixi.models.AttachmentType
+import com.example.bixi.models.AttachmentItem
 import com.example.bixi.models.Message
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MessageAdapter : ListAdapter<Message, MessageAdapter.MessageViewHolder>(MessageDiffCallback()) {
+class CommentsAdapter(private val openAttachmentListener: (attachment: AttachmentItem) -> Unit) : ListAdapter<Message, CommentsAdapter.CommentsViewHolder>(MessageDiffCallback()) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommentsViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.row_chat, parent, false)
-        return MessageViewHolder(view)
+            .inflate(R.layout.row_comment, parent, false)
+        return CommentsViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: CommentsViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class CommentsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val messageText: TextView = itemView.findViewById(R.id.messageText)
         private val messageTime: TextView = itemView.findViewById(R.id.messageTime)
-        private val attachmentContainer: LinearLayout = itemView.findViewById(R.id.attachmentContainer)
+        private val attachmentList: LinearLayout = itemView.findViewById(R.id.attachmentContainer)
         private val messageContainer: View = itemView.findViewById(R.id.messageContainer)
 
         fun bind(message: Message) {
@@ -74,50 +69,37 @@ class MessageAdapter : ListAdapter<Message, MessageAdapter.MessageViewHolder>(Me
 
             // Handle attachments
             if (message.attachments.isNotEmpty()) {
-                attachmentContainer.visibility = View.VISIBLE
-                attachmentContainer.removeAllViews()
-
-                val images = message.attachments.filter { it.type == AttachmentType.IMAGE }
-                val documents = message.attachments.filter { it.type != AttachmentType.IMAGE }
-
-                // Display images first
-                if (images.isNotEmpty()) {
-                    displayImages(images)
-                }
-
-                // Display documents
-                documents.forEach { attachment ->
-                    displayDocument(attachment)
-                }
+                attachmentList.visibility = View.VISIBLE
+                displayAttachmentsHorizontal(message)
             } else {
-                attachmentContainer.visibility = View.GONE
+                attachmentList.visibility = View.GONE
             }
         }
 
-        private fun displayAttachmentsHorizontal(attachments: List<Attachment>) {
+        private fun displayAttachmentsHorizontal(message: Message) {
             val recyclerView = RecyclerView(itemView.context).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
-                    dpToPx(80)
+                    dpToPx(100)
                 ).apply {
                     setMargins(0, dpToPx(4), 0, 0)
                 }
                 layoutManager = LinearLayoutManager(itemView.context, LinearLayoutManager.HORIZONTAL, false)
-                adapter = MessageAttachmentAdapter(attachments) // Afișează toate atașamentele
+                adapter = CommentsAttachmentAdapter(
+                    openAttachmentListener = { position ->
+                        openAttachmentListener(message.attachments[position])
+//                        openAttachment(position)
+                    },
+                    removeListener = { position ->
+//                        onDeleteAttachment(position)
+                    }
+                )
                 isNestedScrollingEnabled = false // Disable nested scrolling pentru performance
             }
 
-            attachmentContainer.addView(recyclerView)
-        }
+            (recyclerView.adapter as CommentsAttachmentAdapter).submitList(message.attachments)
 
-        private fun displayImages(images: List<Attachment>) {
-            // Create horizontal RecyclerView for images
-            displayAttachmentsHorizontal(images)
-        }
-
-        private fun displayDocument(attachment: Attachment) {
-            // For individual documents, create a list with single item
-            displayAttachmentsHorizontal(listOf(attachment))
+            attachmentList.addView(recyclerView)
         }
 
         private fun dpToPx(dp: Int): Int {
