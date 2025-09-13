@@ -45,6 +45,7 @@ class AttachmentViewerActivity : BaseActivity() {
     private var attachmentType: AttachmentType = AttachmentType.UNKNOWN
     private var attachmentServerData: AttachmentResponse? = null
     private var attachmentName: String = ""
+    private var isFirstTime: Boolean = true
 
     private lateinit var imageZoomHelper: ImageZoomHelper
 
@@ -65,7 +66,15 @@ class AttachmentViewerActivity : BaseActivity() {
         initListeners()
         setStyles()
         setupFullscreenMode()
-        loadAttachment()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if(isFirstTime){
+            isFirstTime = false
+            loadAttachment()
+        }
     }
 
     private fun setupFullscreenMode() {
@@ -212,8 +221,17 @@ class AttachmentViewerActivity : BaseActivity() {
     }
 
     private fun loadRemoteDocument(url: String) {
-        val doc="<iframe src='http://docs.google.com/viewer?url=$url&embedded=true' width='100%' height='100%'style='border: none;'></iframe>";
-        binding.webView.loadData( doc, "text/html",  "UTF-8");
+        runOnUiThread {
+            val docHtml = """
+        <html>
+            <body style="margin:0;padding:0;">
+                <iframe src="https://docs.google.com/viewer?url=$url&embedded=true" 
+                        width="100%" height="100%" style="border:none;"></iframe>
+            </body>
+        </html>
+    """.trimIndent()
+            binding.webView.loadDataWithBaseURL(null, docHtml, "text/html",  "UTF-8", null);
+        }
     }
 
     private fun setupWebView() {

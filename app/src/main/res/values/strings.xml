@@ -97,6 +97,8 @@
     <string name="waiting_for_gps_placeholder">Waiting for GPS...</string>
     <string name="confirm">Confirm</string>
 
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
 
 
     <!-- Strings for LocationDialogFragment with real-time accuracy -->

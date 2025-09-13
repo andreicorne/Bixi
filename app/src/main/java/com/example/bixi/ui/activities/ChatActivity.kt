@@ -1,5 +1,6 @@
 package com.example.bixi.ui.activities
 
+import android.animation.ObjectAnimator
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -8,6 +9,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
@@ -29,12 +31,15 @@ import com.example.bixi.helper.ResponseStatusHelper
 import com.example.bixi.helper.Utils
 import com.example.bixi.models.AttachmentHandler
 import com.example.bixi.models.AttachmentItem
+import com.example.bixi.models.MessageItem
 import com.example.bixi.models.api.CreateCommentRequest
 import com.example.bixi.services.RetrofitClient
 import com.example.bixi.services.UIMapperService
 import com.example.bixi.ui.adapters.CommentsAdapter
 import com.example.bixi.viewModels.ChatViewModel
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class ChatActivity : BaseActivity() {
 
@@ -42,6 +47,7 @@ class ChatActivity : BaseActivity() {
     private val viewModel: ChatViewModel by viewModels()
     private lateinit var messageAdapter: CommentsAdapter
     private lateinit var attachmentPreviewAdapter: AttachmentPreviewAdapter
+    private var scrollStartedFirstTime: Boolean = false
 
     // Sistem centralizat pentru ataÈ™amente
     private lateinit var attachmentHelper: AttachmentSelectionHelper
@@ -162,6 +168,35 @@ class ChatActivity : BaseActivity() {
 
                         Log.d("ChatActivity", "Loading more messages from next page...")
                         viewModel.loadMoreMessages()
+                    }
+
+                    if(lastVisibleItem + 1 < totalItemCount && scrollStartedFirstTime){
+                        val lastItem = viewModel.messages.value.get(lastVisibleItem)
+                        if(lastItem is MessageItem){
+                            binding.tvMessageTime.text = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.getDefault()).format(lastItem.timestamp)
+                            if(binding.tvMessageTime.visibility != View.VISIBLE) {
+                                binding.tvMessageTime.visibility = View.VISIBLE
+                            }
+                        }
+                    }
+                    else{
+                        binding.tvMessageTime.text = ""
+                        if(binding.tvMessageTime.visibility != View.GONE){
+                            binding.tvMessageTime.visibility = View.GONE
+                        }
+                    }
+                }
+
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+
+                    if(newState == 0){
+                        if(binding.tvMessageTime.visibility != View.GONE){
+                            binding.tvMessageTime.visibility = View.GONE
+                        }
+                    }
+                    else if(newState == 1){
+                        scrollStartedFirstTime = true
                     }
                 }
             })
@@ -310,5 +345,15 @@ class ChatActivity : BaseActivity() {
             withRipple = true,
             rippleColor = ContextCompat.getColor(this, R.color.md_theme_surfaceVariant),
         )
+
+        BackgroundStylerService.setRoundedBackground(
+            view = binding.tvMessageTime,
+            backgroundColor = ContextCompat.getColor(this, R.color.md_theme_surfaceContainer_highContrast),
+            cornerRadius = 14f * resources.displayMetrics.density,
+        )
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * this.resources.displayMetrics.density).toInt()
     }
 }

@@ -7,7 +7,7 @@ import com.example.bixi.enums.AttachmentType
 import com.example.bixi.helper.Utils
 import com.example.bixi.models.AttachmentHandler
 import com.example.bixi.models.AttachmentItem
-import com.example.bixi.models.Message
+import com.example.bixi.models.MessageItem
 import com.example.bixi.models.UITaskList
 import com.example.bixi.models.api.AttachmentResponse
 import com.example.bixi.models.api.CommentResponse
@@ -38,10 +38,10 @@ object UIMapperService {
         return tasks.map { mapToUiTask(it) }
     }
 
-    fun mapCommentsFromServer(serverComments: List<CommentResponse>, shouldAddEmptyAttachmentAtTheEnd: Boolean): List<Message> {
+    fun mapCommentsFromServer(serverComments: List<CommentResponse>, shouldAddEmptyAttachmentAtTheEnd: Boolean): List<MessageItem> {
         val mappedComments = serverComments.map { serverComment ->
 
-            Message(serverComment.id, serverComment.message,
+            MessageItem(serverComment.id, serverComment.message,
                 Utils.utcIsoStringToCalendar(serverComment.updatedAt).time,
                 mapAttachmentsFromServer(serverComment.documents, shouldAddEmptyAttachmentAtTheEnd),
                 if(AppSession.user!!.user.id.equals(serverComment.authorId)) true else false)

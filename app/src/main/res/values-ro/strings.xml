@@ -97,7 +97,8 @@
     <string name="confirm">Confirmă</string>
     <string name="waiting_for_gps_placeholder">Așteptând GPS...</string>
 
-
+    <string name="today">Azi</string>
+    <string name="yesterday">Ieri</string>
 
     <!-- String-uri pentru LocationDialogFragment cu acuratețe în timp real -->
 
